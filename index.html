@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Jalur Inggris</title>
+  <meta name="description" content="Jalur belajar bahasa Inggris 16 minggu: listening, reading, dan grammar di akhir pekan.">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#" aria-label="Jalur Inggris">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#0b7a5a"/><path d="M9 22c3-1 4-4 7-6s5-2 7-6" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-dasharray="0.1 4.2"/><circle cx="9" cy="22" r="2.6" fill="#fff"/><circle cx="23" cy="10" r="3" fill="#ffe15a"/></svg>
+        <span>Jalur Inggris</span>
+      </a>
+      <div class="chips">
+        <span class="chip chip-flame" id="chipStreak" title="Streak akhir pekan"></span>
+        <span class="chip chip-xp" id="chipXp" title="Level dan XP"></span>
+        <button class="icon-btn" id="btnSettings" type="button" aria-label="Pengaturan">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="greeting">
+      <p class="eyebrow" id="today"></p>
+      <h1 id="greet"></h1>
+      <p class="greet-sub" id="greetSub"></p>
+    </section>
+
+    <section class="hero" id="hero" aria-live="polite"></section>
+
+    <section class="stats" id="stats" aria-label="Ringkasan progres"></section>
+
+    <section class="block">
+      <div class="section-head">
+        <h2>Perjalanan sampai LPDP</h2>
+        <p>4 batch · sekitar 1 tahun di akhir pekan</p>
+      </div>
+      <div id="roadmap" class="roadmap"></div>
+    </section>
+
+    <section class="block">
+      <div class="section-head" id="journeyHead">
+        <h2 id="journeyTitle">Isi batch</h2>
+        <p id="journeySub"></p>
+      </div>
+      <div class="legend" aria-label="Keterangan warna">
+        <span class="tag tag-grammar">Grammar</span>
+        <span class="tag tag-listening">Listening</span>
+        <span class="tag tag-reading">Reading</span>
+        <span class="tag tag-speaking">Speaking</span>
+        <span class="tag tag-writing">Writing</span>
+        <span class="tag tag-test">Uji</span>
+        <span class="tag tag-buffer">Cadangan</span>
+      </div>
+      <div id="journey" class="journey"></div>
+    </section>
+
+    <section class="block">
+      <div class="section-head">
+        <h2>Pencapaian</h2>
+        <p id="badgeCount"></p>
+      </div>
+      <div class="badges" id="badges"></div>
+    </section>
+
+    <section class="block guide">
+      <div class="section-head"><h2>Aturan main</h2></div>
+      <div class="guide-grid">
+        <details open>
+          <summary>Supaya tetap jalan walau malas</summary>
+          <ol>
+            <li><b>Versi minimum: satu video saja.</b> Tekan "Cuma sempat 1 video". Streak tetap aman.</li>
+            <li><b>Jam tetap.</b> Sabtu pagi setelah sarapan, Minggu sore. Jangan menunggu mood.</li>
+            <li><b>Bolos? Lanjut saja.</b> Kartu "Sesi berikutnya" selalu menunjuk langkah selanjutnya. Tidak ada utang dobel.</li>
+            <li><b>Jangan bolos dua minggu berturut-turut.</b> Satu minggu terlewat itu wajar.</li>
+          </ol>
+        </details>
+        <details>
+          <summary>Cara belajar listening 4 langkah</summary>
+          <ol>
+            <li>Dengar sekali <b>tanpa teks</b>. Tidak paham semua itu normal.</li>
+            <li>Dengar lagi sambil membaca <b>transkrip atau subtitle</b>.</li>
+            <li>Catat <b>maksimal 5</b> kata atau frasa baru.</li>
+            <li>Dengar sekali lagi <b>tanpa teks</b>. Di sini pemahaman terbentuk.</li>
+          </ol>
+        </details>
+        <details>
+          <summary>Cara menonton video grammar</summary>
+          <ol>
+            <li>Video berlabel EXERCISE: pause, tulis jawaban, baru lanjut.</li>
+            <li>Buat satu contoh kalimat sendiri untuk tiap aturan baru.</li>
+            <li>Lewati bagian speaking practice dulu. Itu untuk tahap 2.</li>
+          </ol>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Progres tersimpan di browser ini. Simpan cadangannya lewat Pengaturan.</p>
+  </footer>
+
+  <dialog class="sheet" id="sheet" aria-labelledby="sheetTitle">
+    <form method="dialog" class="sheet-inner" id="sheetBody"></form>
+  </dialog>
+
+  <dialog class="sheet" id="settings" aria-labelledby="settingsTitle">
+    <form method="dialog" class="sheet-inner" id="settingsForm">
+      <div class="sheet-head">
+        <h2 id="settingsTitle">Pengaturan</h2>
+        <button class="icon-btn" value="close" aria-label="Tutup"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+      <label class="field" for="basePath">
+        <span>Lokasi folder kursus di laptop</span>
+        <input id="basePath" type="text" spellcheck="false" placeholder="C:\Users\...\Downloads\World-Class English and Professional Skills">
+        <small>Dipakai tombol "Salin lokasi" supaya bisa langsung ditempel di address bar File Explorer.</small>
+      </label>
+      <div class="field">
+        <span>Cadangan progres</span>
+        <div class="row">
+          <button type="button" class="btn btn-ghost" id="btnExport">Unduh cadangan</button>
+          <label class="btn btn-ghost" for="importFile">Pulihkan dari file</label>
+          <input id="importFile" type="file" accept="application/json,.json" hidden>
+        </div>
+        <small>Progres hanya ada di browser ini. Unduh cadangan sesekali, atau sebelum pindah perangkat.</small>
+      </div>
+      <div class="field danger">
+        <span>Mulai dari awal</span>
+        <div class="row">
+          <button type="button" class="btn btn-danger" id="btnReset">Hapus semua progres</button>
+        </div>
+        <small id="resetHint">Tekan dua kali untuk memastikan.</small>
+      </div>
+      <div class="row end">
+        <button class="btn btn-primary" value="save" id="btnSaveSettings">Simpan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
