@@ -1,6 +1,6 @@
-# Jalur Inggris
+# Elocia
 
-Pelacak belajar bahasa Inggris untuk akhir pekan: 4 batch (sekitar 1 tahun) dari fondasi listening dan reading sampai siap tes IELTS untuk LPDP.
+Teman belajar bahasa Inggris untuk akhir pekan: 4 batch (sekitar 1 tahun) dari fondasi listening dan reading sampai siap tes IELTS untuk LPDP.
 
 ## Membuka di laptop
 

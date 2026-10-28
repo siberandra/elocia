@@ -3,7 +3,7 @@
 
   const PLAN = window.PLAN;
   const START = new Date(PLAN.start[0], PLAN.start[1], PLAN.start[2]);
-  const KEY = "jalur-inggris:v1";
+  const KEY = "jalur-inggris:v1"; // nama lama aplikasi; tetap dipakai supaya progres yang sudah tersimpan tidak hilang
   const DAY_MS = 86400000;
   const XP = { full: 100, min: 40 };
   const XP_PER_LEVEL = 400;
@@ -450,7 +450,7 @@
     const s = nextSession();
     if (!s) {
       hero.innerHTML = `
-        <span class="hero-sticker">${ICON.trophy} Jalur tuntas</span>
+        <span class="hero-sticker">${ICON.trophy} Perjalanan tuntas</span>
         <h2><span class="hl">${ALL.length} dari ${ALL.length} sesi selesai. Luar biasa.</span></h2>
         <p class="hero-note">${esc(PLAN.destination.note)}</p>`;
       return;
@@ -755,7 +755,7 @@
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `jalur-inggris-${ymd(new Date())}.json`;
+    a.download = `elocia-${ymd(new Date())}.json`;
     document.body.append(a);
     a.click();
     a.remove();
@@ -777,7 +777,7 @@
       settings.close();
       toast("Progres dipulihkan dari cadangan.");
     } catch (err) {
-      toast("File itu bukan cadangan Jalur Inggris. Pilih file .json hasil Unduh cadangan.");
+      toast("File itu bukan cadangan Elocia. Pilih file .json hasil Unduh cadangan.");
     }
   });
 
