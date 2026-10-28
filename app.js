@@ -384,7 +384,7 @@
       const cls = batchDone(b.index) ? "done" : isUnlocked(b.index) ? "active" : "locked";
       return `<div class="strip-seg ${cls}" style="flex:${b.sessions.length}">
           <span class="strip-fill" style="width:${(n / b.sessions.length) * 100}%"></span>
-          <span class="strip-label">B${b.index + 1}</span>
+          <span class="strip-label" title="${esc(b.name)}">Batch ${b.index + 1}</span>
         </div>`;
     }).join("");
     const ab = BATCHES[st.active];

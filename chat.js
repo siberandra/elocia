@@ -130,28 +130,70 @@
     if (err.status === 400 && /api key/i.test(err.message)) return "Kunci API tidak valid. Periksa lagi kuncinya lewat tombol Kunci.";
     if (err.status === 401 || err.status === 403) return "Kunci API ditolak. Pastikan kuncinya benar dan Gemini API aktif di Google AI Studio.";
     if (err.status === 429) return "Batas pemakaian gratis sedang habis. Tunggu sebentar (biasanya 1 menit, atau besok untuk batas harian), lalu coba lagi.";
-    if (err.status >= 500) return "Server Gemini sedang bermasalah. Coba lagi beberapa saat lagi.";
+    if (err.status === 404) return "Model Gemini tidak tersedia untuk kunci ini. Coba lagi, Elocia akan memilih model lain.";
+    if (err.status >= 500) return "Gemini sedang sibuk. Elocia sudah mencoba beberapa model cadangan, coba lagi beberapa menit lagi.";
     if (!navigator.onLine) return "Tidak ada koneksi internet.";
     return `Gagal menghubungi Gemini${err.message ? `: ${err.message}` : "."}`;
   }
 
-  // Pilih model Flash stabil terbaru yang tersedia untuk kunci ini, supaya tidak usang saat model baru rilis.
-  async function pickModel(key, force) {
-    const cached = store.get(MODEL_STORE);
-    if (cached && !force) return cached;
+  const LIST_STORE = "elocia:gemini-models";
+  const BLOCK_STORE = "elocia:gemini-blocked";
+  const FIRST_CHUNK_MS = 20000;
+  const MAX_ATTEMPTS = 4;
+  const RETRYABLE = [404, 429, 500, 502, 503, 504];
+  const readJSON = (k, d) => {
+    try {
+      return JSON.parse(store.get(k)) || d;
+    } catch (e) {
+      return d;
+    }
+  };
+
+  // Daftar model untuk kunci ini: Flash stabil terbaru dulu, Flash-Lite sebagai cadangan cepat.
+  // Diambil dari API (bukan ditulis tetap) supaya tidak usang saat Google merilis model baru.
+  async function listModels(key, force) {
+    const cached = readJSON(LIST_STORE, null);
+    if (!force && cached && Date.now() - cached.at < 864e5 && cached.models && cached.models.length) return cached.models;
     const res = await fetch(`${API}/models?pageSize=200&key=${encodeURIComponent(key)}`);
     if (!res.ok) throw await apiError(res);
     const j = await res.json();
     const names = (j.models || [])
       .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
       .map((m) => m.name.replace(/^models\//, ""))
-      .filter((n) => /^gemini-[\d.]+-flash/.test(n) && !/(lite|image|tts|live|audio|thinking|exp|embedding|native|vision|8b)/.test(n));
+      .filter((n) => /^gemini-[\d.]+-flash/.test(n) && !/(image|tts|live|audio|thinking|exp|embedding|native|vision|8b|preview)/.test(n));
     const ver = (n) => parseFloat((n.match(/^gemini-([\d.]+)/) || [])[1] || 0);
-    const stable = names.filter((n) => !/preview/.test(n));
-    const pool = (stable.length ? stable : names).sort((a, b) => ver(b) - ver(a) || a.length - b.length);
-    const model = pool[0] || "gemini-2.0-flash";
-    store.set(MODEL_STORE, model);
-    return model;
+    const byNewest = (a, b) => ver(b) - ver(a) || a.length - b.length;
+    const models = names
+      .filter((n) => !/lite/.test(n))
+      .sort(byNewest)
+      .concat(names.filter((n) => /lite/.test(n)).sort(byNewest))
+      .slice(0, 8);
+    if (!models.length) models.push("gemini-flash-latest");
+    store.set(LIST_STORE, JSON.stringify({ at: Date.now(), models }));
+    return models;
+  }
+
+  // Model yang terakhir berhasil dicoba duluan; model yang ditolak permanen (404) dilewati.
+  async function modelOrder(key) {
+    const blocked = readJSON(BLOCK_STORE, []);
+    let list = (await listModels(key)).filter((m) => !blocked.includes(m));
+    if (!list.length) {
+      store.set(BLOCK_STORE, "");
+      list = await listModels(key, true);
+    }
+    const pref = store.get(MODEL_STORE);
+    return pref && list.includes(pref) ? [pref].concat(list.filter((m) => m !== pref)) : list;
+  }
+
+  function blockModel(model) {
+    const blocked = readJSON(BLOCK_STORE, []);
+    if (!blocked.includes(model)) store.set(BLOCK_STORE, JSON.stringify(blocked.concat(model)));
+    if (store.get(MODEL_STORE) === model) store.set(MODEL_STORE, "");
+  }
+
+  function showModel() {
+    const m = store.get(MODEL_STORE);
+    $("chatModel").textContent = m ? `Teman belajar · ${m}` : "Teman belajar, ditenagai Gemini";
   }
 
   async function* stream(key, model, body, signal) {
@@ -284,8 +326,8 @@
     const del = $("keyDelete");
     if (del)
       del.addEventListener("click", () => {
-        store.set(KEY_STORE, "");
-        store.set(MODEL_STORE, "");
+        [KEY_STORE, MODEL_STORE, LIST_STORE, BLOCK_STORE].forEach((k) => store.set(k, ""));
+        showModel();
         renderSetup("Kunci dihapus dari perangkat ini.");
       });
     setTimeout(() => $("geminiKey").focus(), 50);
@@ -304,10 +346,15 @@
     msg.textContent = "Mengetes kunci…";
     $("keySave").disabled = true;
     try {
-      const model = await pickModel(key, true);
+      if (key !== store.get(KEY_STORE)) {
+        store.set(MODEL_STORE, "");
+        store.set(BLOCK_STORE, "");
+      }
+      const models = await listModels(key, true);
       store.set(KEY_STORE, key);
-      msg.textContent = `Berhasil. Model: ${model}`;
-      setTimeout(renderChat, 600);
+      msg.textContent = `Kunci valid. ${models.length} model siap dipakai, mulai dari ${models[0]}.`;
+      showModel();
+      setTimeout(renderChat, 900);
     } catch (err) {
       msg.textContent = friendlyError(err);
       msg.classList.add("bad");
@@ -338,25 +385,62 @@
     controller = new AbortController();
     const activeMode = mode;
     try {
-      const model = await pickModel(key);
       const payload = {
         systemInstruction: { parts: [{ text: systemPrompt(activeMode) }] },
         contents: h.slice(),
         generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
       };
-      for await (const chunk of stream(key, model, payload, controller.signal)) {
-        reply.parts[0].text += chunk;
-        if (mode === activeMode && pendingEl.isConnected) {
-          pendingEl.querySelector(".msg-text").innerHTML = md(reply.parts[0].text);
-          body.scrollTop = body.scrollHeight;
+      const order = (await modelOrder(key)).slice(0, MAX_ATTEMPTS);
+      let lastErr = null;
+      let answered = false;
+      for (const model of order) {
+        // Tiap percobaan punya batas waktu sampai potongan jawaban pertama; tombol stop tetap menghentikan semuanya.
+        const attempt = new AbortController();
+        const stop = () => attempt.abort();
+        controller.signal.addEventListener("abort", stop);
+        let timedOut = false;
+        const timer = setTimeout(() => {
+          timedOut = true;
+          attempt.abort();
+        }, FIRST_CHUNK_MS);
+        try {
+          for await (const chunk of stream(key, model, payload, attempt.signal)) {
+            clearTimeout(timer);
+            reply.parts[0].text += chunk;
+            if (mode === activeMode && pendingEl.isConnected) {
+              pendingEl.querySelector(".msg-text").innerHTML = md(reply.parts[0].text);
+              body.scrollTop = body.scrollHeight;
+            }
+          }
+          if (reply.parts[0].text) {
+            answered = true;
+            store.set(MODEL_STORE, model);
+            break;
+          }
+          lastErr = Object.assign(new Error(""), { status: 503 });
+        } catch (err) {
+          if (controller.signal.aborted) throw err;
+          if (reply.parts[0].text) {
+            answered = true;
+            break;
+          }
+          lastErr = timedOut ? Object.assign(new Error(""), { status: 504 }) : err;
+          if (err.status === 404) blockModel(model);
+          if (lastErr.status !== undefined && !RETRYABLE.includes(lastErr.status)) throw lastErr;
+          if (pendingEl.isConnected) {
+            pendingEl.querySelector(".msg-text").innerHTML = '<span class="typing"><i></i><i></i><i></i></span><span class="retry-note">Model sedang sibuk, mencoba cadangan…</span>';
+          }
+        } finally {
+          clearTimeout(timer);
+          controller.signal.removeEventListener("abort", stop);
         }
       }
-      if (!reply.parts[0].text) reply.parts[0].text = "Maaf, tidak ada jawaban. Coba ulangi dengan kalimat lain.";
+      if (!answered) throw lastErr || new Error("");
+      showModel();
       history[activeMode].push(reply);
       if (mode === activeMode) renderChat();
       if (speakOn && MODES[activeMode].speak) speak(reply.parts[0].text);
     } catch (err) {
-      if (err.status === 404) store.set(MODEL_STORE, "");
       if (pendingEl.isConnected) {
         pendingEl.classList.remove("pending");
         pendingEl.classList.add("error");
@@ -434,6 +518,7 @@
   function open(m) {
     if (m && MODES[m]) mode = m;
     renderModes();
+    showModel();
     if (store.get(KEY_STORE)) renderChat();
     else renderSetup();
     if (!dialog.open) dialog.showModal();
