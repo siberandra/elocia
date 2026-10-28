@@ -133,6 +133,51 @@ svg { display: block; }
 .greeting h1 { font-size: var(--fs-3xl); font-weight: 800; }
 .greet-sub { color: var(--muted); font-size: var(--fs-lg); max-width: 58ch; line-height: 1.55; }
 
+.greet-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.clock {
+  font-family: var(--mono); font-size: var(--fs-xs); font-weight: 500; font-variant-numeric: tabular-nums;
+  color: var(--ink-2); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 2px 7px;
+}
+.day-chip { font-size: var(--fs-xs); font-weight: 800; color: var(--muted); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; }
+.day-chip.on { background: var(--mark); border-color: transparent; color: var(--ink); }
+.day-chip.soon { background: var(--primary-soft); border-color: transparent; color: var(--primary); }
+
+/* Garis perjalanan B1–B4 */
+.strip { display: grid; gap: 10px; margin-top: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px 16px; box-shadow: var(--shadow-sm); }
+.strip-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: var(--fs-sm); color: var(--muted); }
+.strip-head b { color: var(--ink); font-weight: 800; }
+.strip-where { font-weight: 700; color: var(--primary); }
+.strip-track { position: relative; display: flex; align-items: center; gap: 4px; padding-right: 34px; height: 26px; }
+.strip-seg { position: relative; height: 10px; border-radius: 99px; background: var(--line); overflow: visible; min-width: 0; }
+.strip-seg.locked { background: repeating-linear-gradient(135deg, var(--line) 0 4px, var(--surface-2) 4px 8px); }
+.strip-fill { position: absolute; inset: 0 auto 0 0; border-radius: 99px; background: var(--done); transition: width .6s ease; }
+.strip-label { position: absolute; top: 13px; left: 0; font-family: var(--mono); font-size: .625rem; font-weight: 500; color: var(--muted); }
+.strip-seg.active .strip-label { color: var(--primary); font-weight: 700; }
+.strip-goal { position: absolute; right: 0; top: 50%; transform: translateY(-50%) rotate(-4deg); width: 26px; height: 26px; border-radius: 8px; background: var(--mark); display: grid; place-items: center; }
+.strip-pin {
+  position: absolute; top: 50%; width: 18px; height: 18px; margin-left: -9px; transform: translateY(-50%);
+  border-radius: 50%; background: var(--surface); border: 3px solid var(--primary); box-shadow: 0 0 0 4px var(--primary-ring);
+}
+.strip-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: var(--fs-xs); color: var(--muted); padding-top: 6px; }
+.strip-foot b { color: var(--ink); }
+
+/* Kalimat hari ini + insight */
+.insight-row { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 14px; margin-top: -12px; }
+.phrase {
+  position: relative; overflow: hidden; display: grid; gap: 8px; align-content: start;
+  background: var(--ink); color: #fff; border-radius: var(--r-lg); padding: 20px;
+}
+.phrase::after { content: "“"; position: absolute; right: 12px; bottom: -42px; font-family: var(--font-display); font-size: 9rem; line-height: 1; color: rgba(255, 225, 90, .16); pointer-events: none; }
+.phrase .eyebrow { color: var(--mark); }
+.phrase-en { font-family: var(--font-display); font-size: var(--fs-xl); font-weight: 800; line-height: 1.25; letter-spacing: -0.015em; text-wrap: balance; }
+.phrase-id { font-size: var(--fs-md); color: rgba(255, 255, 255, .78); }
+.phrase-word { margin-top: 4px; font-size: var(--fs-sm); color: rgba(255, 255, 255, .78); }
+.phrase-word b { color: var(--ink); background: var(--mark); padding: 1px 6px; border-radius: 5px; font-weight: 800; }
+.insights { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.insight { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px 16px; display: grid; gap: 4px; align-content: start; min-width: 0; box-shadow: var(--shadow-sm); }
+.insight-value { font-family: var(--font-display); font-size: var(--fs-xl); font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
+#nickname { font-family: var(--font); font-size: var(--fs-md); }
+
 /* ---------- Hero: kartu sesi berikutnya ---------- */
 .hero {
   position: relative; overflow: hidden; isolation: isolate;
@@ -425,6 +470,7 @@ button.rm-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); b
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .badges { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .rm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .insight-row { grid-template-columns: minmax(0, 1fr); margin-top: -8px; }
 }
 @media (max-width: 480px) {
   .rm-grid { grid-template-columns: minmax(0, 1fr); }

@@ -32,14 +32,24 @@
 
   <main class="container">
     <section class="greeting">
-      <p class="eyebrow" id="today"></p>
+      <div class="greet-top">
+        <span class="eyebrow" id="today"></span>
+        <span class="clock" id="clock" aria-label="Jam sekarang"></span>
+        <span class="day-chip" id="dayChip"></span>
+      </div>
       <h1 id="greet"></h1>
       <p class="greet-sub" id="greetSub"></p>
+      <div class="strip" id="journeyStrip" aria-label="Progres seluruh perjalanan"></div>
     </section>
 
     <section class="hero" id="hero" aria-live="polite"></section>
 
     <section class="stats" id="stats" aria-label="Ringkasan progres"></section>
+
+    <section class="insight-row" aria-label="Insight dan kalimat hari ini">
+      <div class="phrase" id="phrase"></div>
+      <div class="insights" id="insights"></div>
+    </section>
 
     <section class="block">
       <div class="section-head">
@@ -121,6 +131,11 @@
         <h2 id="settingsTitle">Pengaturan</h2>
         <button class="icon-btn" value="close" aria-label="Tutup"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
       </div>
+      <label class="field" for="nickname">
+        <span>Nama panggilan</span>
+        <input id="nickname" type="text" maxlength="30" autocomplete="nickname" placeholder="Misalnya Vicky">
+        <small>Dipakai di sapaan. Kosongkan kalau tidak ingin disapa dengan nama.</small>
+      </label>
       <label class="field" for="basePath">
         <span>Lokasi folder kursus di laptop</span>
         <input id="basePath" type="text" spellcheck="false" placeholder="C:\Users\...\Downloads\World-Class English and Professional Skills">

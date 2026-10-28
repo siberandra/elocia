@@ -98,7 +98,7 @@
 
   // ---------- Penyimpanan ----------
   function emptyState() {
-    return { done: {}, log: [], basePath: "", batchStart: {} };
+    return { done: {}, log: [], basePath: "", batchStart: {}, name: "Vicky" };
   }
   function isValid(s) {
     return s && typeof s === "object" && s.done && typeof s.done === "object" && Array.isArray(s.log);
@@ -277,6 +277,7 @@
     renderGreeting(st);
     renderHero(st);
     renderStats(st);
+    renderInsights(st);
     renderRoadmap(st);
     renderJourney(st);
     renderBadges(st);
@@ -290,35 +291,158 @@
     $("chipXp").innerHTML = `${ICON.bolt}<span>Lv ${st.level}</span><span class="xp-num">· ${st.xp} XP</span>`;
   }
 
-  function renderGreeting(st) {
-    const now = new Date();
+  // ---------- Sapaan ----------
+  const PHRASES = [
+    { en: "Little by little, a little becomes a lot.", id: "Sedikit demi sedikit, lama-lama menjadi banyak.", word: "little by little", mean: "sedikit demi sedikit" },
+    { en: "Slow progress is still progress.", id: "Kemajuan yang lambat tetap sebuah kemajuan.", word: "progress", mean: "kemajuan" },
+    { en: "Don't wait for motivation. Start, and it will follow.", id: "Jangan menunggu motivasi. Mulai saja, nanti motivasi menyusul.", word: "follow", mean: "mengikuti, menyusul" },
+    { en: "Every expert was once a beginner.", id: "Setiap ahli dulunya juga seorang pemula.", word: "once", mean: "dulu, pernah" },
+    { en: "Mistakes are proof that you are trying.", id: "Kesalahan adalah bukti bahwa kamu sedang berusaha.", word: "proof", mean: "bukti" },
+    { en: "Consistency beats intensity.", id: "Konsisten mengalahkan belajar keras sesekali.", word: "beat", mean: "mengalahkan" },
+    { en: "Done is better than perfect.", id: "Selesai lebih baik daripada sempurna.", word: "better than", mean: "lebih baik daripada" },
+    { en: "Small steps every weekend add up.", id: "Langkah kecil tiap akhir pekan akan terkumpul jadi besar.", word: "add up", mean: "terkumpul, bertambah banyak" },
+    { en: "Learning a language is a marathon, not a sprint.", id: "Belajar bahasa itu maraton, bukan lari cepat.", word: "sprint", mean: "lari cepat jarak pendek" },
+    { en: "Listen more, and the words will come.", id: "Lebih banyak mendengar, nanti kata-katanya datang sendiri.", word: "will come", mean: "akan datang" },
+    { en: "Keep going. You are closer than you think.", id: "Terus jalan. Kamu lebih dekat dari yang kamu kira.", word: "keep going", mean: "terus berjalan, jangan berhenti" },
+    { en: "The best time to start was yesterday. The next best time is now.", id: "Waktu terbaik untuk mulai adalah kemarin. Waktu terbaik berikutnya adalah sekarang.", word: "the next best", mean: "terbaik berikutnya" },
+    { en: "You don't have to be fast. You just have to keep showing up.", id: "Tidak harus cepat. Cukup terus hadir.", word: "show up", mean: "hadir, datang" },
+    { en: "Your future self will thank you.", id: "Dirimu di masa depan akan berterima kasih.", word: "future self", mean: "diri di masa depan" },
+    { en: "It always seems impossible until it's done.", id: "Selalu tampak mustahil sampai akhirnya berhasil.", word: "seem", mean: "tampak, kelihatannya" },
+    { en: "One page, one video, one step.", id: "Satu halaman, satu video, satu langkah.", word: "step", mean: "langkah" },
+    { en: "Today's effort is tomorrow's confidence.", id: "Usaha hari ini adalah rasa percaya diri esok hari.", word: "effort", mean: "usaha" },
+    { en: "Don't compare your chapter one to someone else's chapter twenty.", id: "Jangan bandingkan bab satumu dengan bab dua puluh milik orang lain.", word: "compare", mean: "membandingkan" },
+  ];
+  const DAY_NAMES = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+
+  const salamFor = (h) => (h >= 4 && h < 11 ? "Selamat pagi" : h >= 11 && h < 15 ? "Selamat siang" : h >= 15 && h < 18 ? "Selamat sore" : "Selamat malam");
+  const fmtTime = (d) => `${pad(d.getHours())}.${pad(d.getMinutes())}`;
+  const fmtDuration = (m) => (m < 60 ? `${m} mnt` : `${Math.floor(m / 60)} jam${m % 60 ? ` ${m % 60} mnt` : ""}`);
+  const nameOf = () => (state.name || "").trim();
+
+  function greetingMessage(st, now) {
+    const name = nameOf();
     const h = now.getHours();
-    const salam = h < 11 ? "Selamat pagi" : h < 15 ? "Selamat siang" : h < 18 ? "Selamat sore" : "Selamat malam";
     const wd = now.getDay();
-    let title;
-    let sub;
+    const weekend = wd === 6 || wd === 0;
+    const today = ymd(now);
+    const next = nextSession();
+    const ab = BATCHES[st.active];
+    const remaining = ab.sessions.length - st.activeDone;
+    const behind = st.expected - st.activeDone;
+    const studiedToday = state.log.some((e) => e.date === today);
+    const abStart = batchStart(st.active);
+    const daysToSat = (6 - wd + 7) % 7;
+
+    if (allDone()) return `Semua ${ALL.length} sesi selesai${name ? `, ${name}` : ""}. Tinggal satu langkah: pilih tanggal tes IELTS resmi.`;
     if (startOfDay(now) < START) {
       const left = daysBetween(now, START);
-      title = `${salam}. Perjalanan dimulai ${left === 1 ? "besok" : `${left} hari lagi`}.`;
-      sub = `Sesi pertama dijadwalkan ${fmtLong(START)}. Mau curi start? Silakan, kartu di bawah sudah siap.`;
-    } else if (allDone()) {
-      title = `${salam}. Semua batch selesai!`;
-      sub = "Saatnya memilih tanggal tes IELTS resmi.";
-    } else if (wd === 6 || wd === 0) {
-      title = `${salam}. Hari ini hari belajar.`;
-      sub = st.activeThisWeek
-        ? "Pekan ini sudah tercatat, streak aman. Lanjut satu sesi lagi kalau masih semangat."
-        : "Satu sesi saja sudah cukup. Kalau sedang malas, satu video pun tetap dihitung.";
-    } else if (wd === 5) {
-      title = `${salam}. Besok Sabtu.`;
-      sub = "Intip sesi besok dulu supaya tidak bingung mulai dari mana.";
-    } else {
-      title = `${salam}. Hari kerja, santai dulu.`;
-      sub = "Kalau sempat, putar ulang satu Daily Conversation selama 2 menit. Tidak wajib.";
+      return `Perjalanan dimulai ${fmtLong(START)}, ${left === 1 ? "besok" : `${left} hari lagi`}. Mau curi start? Kartu di bawah sudah siap.`;
     }
-    $("today").textContent = fmtLong(now);
-    $("greet").textContent = title;
-    $("greetSub").textContent = sub;
+    if (studiedToday) return `Sesi hari ini sudah tercatat. Mantap${name ? `, ${name}` : ""}! Nikmati sisa harinya, atau lanjut satu sesi lagi kalau masih semangat.`;
+    if (st.active > 0 && st.activeDone === 0 && daysBetween(abStart, now) < 7) return `Batch ${st.active + 1}: ${ab.name} baru saja terbuka. Babak baru dimulai, ${ab.goal.charAt(0).toLowerCase()}${ab.goal.slice(1)}`;
+    if (h >= 22 || h < 4) return weekend ? "Sudah larut. Kalau masih mau, cukup satu video saja, lalu istirahat." : "Sudah larut. Istirahat dulu, Sabtu nanti kita lanjut lagi.";
+    if (weekend) {
+      if (behind >= 2) return `Tertinggal ${behind} sesi, dan itu tidak apa-apa. Satu sesi hari ini sudah membuat jaraknya lebih dekat.`;
+      if (remaining <= 4) return `Tinggal ${remaining} sesi lagi menuju akhir Batch ${st.active + 1}. Hampir sampai!`;
+      if (st.streak >= 2) return `Streak ${st.streak} pekan sedang menyala. Satu sesi hari ini menjaganya tetap hidup.`;
+      if (st.best > 0 && st.streak === 0) return "Streak sempat putus, tapi hari ini saat yang pas untuk mulai lagi.";
+      return `Hari belajar! Satu sesi saja sudah cukup${next ? `, kira-kira ${next.min} menit` : ""}.`;
+    }
+    if (wd === 5) return next ? `Besok Sabtu. Sesi besok: ${next.what}, sekitar ${next.min} menit.` : "Besok Sabtu, hari belajar.";
+    if (st.activeThisWeek) return `Pekan ini sudah ada sesi yang tercatat. Hari kerja, santai dulu. ${daysToSat} hari lagi ke Sabtu.`;
+    return `Hari kerja, santai dulu. ${daysToSat} hari lagi ke Sabtu. Kalau sempat, putar ulang satu Daily Conversation selama 2 menit.`;
+  }
+
+  function dayChip(now) {
+    const wd = now.getDay();
+    if (wd === 6 || wd === 0) return { text: "Hari belajar", cls: "on" };
+    if (wd === 5) return { text: "Besok Sabtu", cls: "soon" };
+    const d = 6 - wd;
+    return { text: `${d} hari lagi ke Sabtu`, cls: "" };
+  }
+
+  function renderGreeting(st) {
+    const now = new Date();
+    const name = nameOf();
+    const chip = dayChip(now);
+    $("today").textContent = now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    $("clock").textContent = fmtTime(now);
+    $("dayChip").textContent = chip.text;
+    $("dayChip").className = `day-chip ${chip.cls}`;
+    $("greet").textContent = `${salamFor(now.getHours())}${name ? `, ${name}` : ""}.`;
+    $("greetSub").textContent = greetingMessage(st, now);
+    renderStrip(st);
+  }
+
+  function renderStrip(st) {
+    const total = ALL.length;
+    const pct = (st.doneCount / total) * 100;
+    const name = nameOf();
+    const segs = BATCHES.map((b) => {
+      const n = batchDoneCount(b.index);
+      const cls = batchDone(b.index) ? "done" : isUnlocked(b.index) ? "active" : "locked";
+      return `<div class="strip-seg ${cls}" style="flex:${b.sessions.length}">
+          <span class="strip-fill" style="width:${(n / b.sessions.length) * 100}%"></span>
+          <span class="strip-label">B${b.index + 1}</span>
+        </div>`;
+    }).join("");
+    const ab = BATCHES[st.active];
+    const where = allDone() ? "Semua batch selesai" : `Batch ${st.active + 1} · minggu ${Math.max(st.currentWeek, 1)} dari ${ab.weeks.length}`;
+    $("journeyStrip").innerHTML = `
+      <div class="strip-head">
+        <span><b>Perjalanan${name ? ` ${esc(name)}` : ""}</b> · ${st.doneCount} dari ${total} sesi (${Math.round(pct)}%)</span>
+        <span class="strip-where">${esc(where)}</span>
+      </div>
+      <div class="strip-track">
+        ${segs}
+        <span class="strip-goal" title="Tes IELTS">${sized(ICON.flag, 14)}</span>
+        <span class="strip-pin" style="left:calc((100% - 34px) * ${(pct / 100).toFixed(4)})" aria-hidden="true"></span>
+      </div>
+      <div class="strip-foot">
+        <span>Mulai ${esc(fmtShort(START))}</span>
+        <span>Perkiraan siap tes: <b>${esc(fmtMonth(batchEnd(BATCHES.length - 1)))}</b></span>
+      </div>`;
+  }
+
+  function renderInsights(st) {
+    const now = new Date();
+    const dayIndex = Math.floor(startOfDay(now) / DAY_MS);
+    const p = PHRASES[((dayIndex % PHRASES.length) + PHRASES.length) % PHRASES.length];
+
+    const minutes = state.log.reduce((sum, e) => sum + (e.kind === "full" ? (BY_ID[e.id] ? BY_ID[e.id].min : 0) : 10), 0);
+    const dayCount = {};
+    state.log.forEach((e) => {
+      const d = fromYmd(e.date).getDay();
+      dayCount[d] = (dayCount[d] || 0) + 1;
+    });
+    const favDay = Object.keys(dayCount).sort((a, b) => dayCount[b] - dayCount[a])[0];
+    const kindCount = {};
+    ALL.filter((s) => state.done[s.id]).forEach((s) => (kindCount[s.kind] = (kindCount[s.kind] || 0) + 1));
+    const topKind = Object.keys(kindCount).sort((a, b) => kindCount[b] - kindCount[a])[0];
+    const ab = BATCHES[st.active];
+    const remaining = ab.sessions.length - st.activeDone;
+    const remainingMin = ab.sessions.filter((s) => !state.done[s.id]).reduce((sum, s) => sum + s.min, 0);
+
+    const items = [
+      { label: "Total waktu belajar", value: minutes ? fmtDuration(minutes) : "0 mnt", foot: minutes ? `dari ${state.log.length} catatan sesi` : "Mulai dari sesi pertama" },
+      { label: "Hari paling rajin", value: favDay !== undefined ? DAY_NAMES[favDay] : "Belum ada", foot: favDay !== undefined ? `${dayCount[favDay]} sesi di hari ${DAY_NAMES[favDay]}` : "Terlihat setelah beberapa sesi" },
+      { label: `Sisa Batch ${st.active + 1}`, value: allDone() ? "Selesai" : `${remaining} sesi`, foot: allDone() ? "Semua batch tuntas" : `±${fmtDuration(remainingMin)} · ±${Math.ceil(remaining / 2)} akhir pekan` },
+      { label: "Paling banyak dipelajari", value: topKind ? KIND_LABEL[topKind] : "Belum ada", foot: topKind ? `${kindCount[topKind]} sesi selesai` : "Terlihat setelah sesi pertama" },
+    ];
+
+    $("phrase").innerHTML = `
+      <span class="eyebrow">Kalimat hari ini</span>
+      <p class="phrase-en">“${esc(p.en)}”</p>
+      <p class="phrase-id">${esc(p.id)}</p>
+      <p class="phrase-word"><b>${esc(p.word)}</b> = ${esc(p.mean)}</p>`;
+    $("insights").innerHTML = items
+      .map((i) => `
+        <div class="insight">
+          <span class="stat-label">${esc(i.label)}</span>
+          <span class="insight-value">${esc(i.value)}</span>
+          <span class="stat-foot">${esc(i.foot)}</span>
+        </div>`)
+      .join("");
   }
 
   function renderHero(st) {
@@ -613,6 +737,7 @@
   const settings = $("settings");
   function openSettings() {
     $("basePath").value = state.basePath || "";
+    $("nickname").value = state.name || "";
     disarmReset();
     settings.showModal();
   }
@@ -620,6 +745,7 @@
   settings.addEventListener("close", () => {
     if (settings.returnValue !== "save") return;
     state.basePath = $("basePath").value.trim();
+    state.name = $("nickname").value.trim().slice(0, 30);
     save();
     render();
     toast("Pengaturan disimpan.");
@@ -671,9 +797,10 @@
       resetTimer = setTimeout(disarmReset, 4000);
       return;
     }
-    const basePath = state.basePath;
+    const { basePath, name } = state;
     state = emptyState();
     state.basePath = basePath;
+    state.name = name;
     viewBatch = null;
     save();
     render();
@@ -762,4 +889,16 @@
   }
 
   render();
+
+  // Jam dan kalimat sapaan ikut berganti tanpa perlu memuat ulang halaman.
+  let lastDay = ymd(new Date());
+  setInterval(() => {
+    const today = ymd(new Date());
+    if (today !== lastDay) {
+      lastDay = today;
+      render();
+    } else {
+      renderGreeting(stats());
+    }
+  }, 30000);
 })();
