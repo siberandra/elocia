@@ -44,6 +44,7 @@
     book: svg('<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5Z"/><path d="M4 19a2 2 0 0 1 2-2h13"/>'),
     flameLine: svg('<path d="M12 2c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.6 1.2 2.5 2 2.5 0-3 0-5.5 1-8Z"/>'),
     arrow: svg('<path d="M5 12h14M13 6l6 6-6 6"/>'),
+    spark: svg('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" fill="currentColor"/>'),
   };
 
   const CHEERS = [
@@ -478,7 +479,9 @@
       <div class="hero-actions">
         <button type="button" class="btn btn-primary" id="heroDone">${ICON.check} Selesai</button>
         <button type="button" class="btn btn-ghost" id="heroMin">Cuma sempat 1 video</button>
-      </div>`;
+      </div>
+      <button type="button" class="hero-ask" id="heroAsk">${sized(ICON.spark, 16)} Bingung? Tanya Elocia tentang sesi ini</button>`;
+    $("heroAsk").addEventListener("click", () => window.EloChat && window.EloChat.open("kuis"));
     $("heroCopy").addEventListener("click", () => copyPath(s));
     $("heroDone").addEventListener("click", () => complete(s.id, "full"));
     $("heroMin").addEventListener("click", () => complete(s.id, "min"));
@@ -887,6 +890,20 @@
     }
     requestAnimationFrame(frame);
   }
+
+  // Konteks untuk Elocia AI (chat.js): siapa pengguna dan sesi apa yang sedang dikerjakan.
+  window.ElociaApp = {
+    context() {
+      const st = stats();
+      const b = BATCHES[st.active];
+      const s = nextSession();
+      return {
+        name: nameOf(),
+        batch: `Batch ${st.active + 1} dari ${BATCHES.length}: ${b.name} (${b.level}), ${st.activeDone} dari ${b.sessions.length} sesi selesai`,
+        session: s ? { what: s.what, kind: KIND_LABEL[s.kind], note: s.note } : null,
+      };
+    },
+  };
 
   render();
 
