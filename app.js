@@ -36,6 +36,7 @@
     play: svg('<path d="M7 4v16l13-8Z"/>'),
     heart: svg('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/>'),
     lock: svg('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'),
+    unlock: svg('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/>'),
     flag: svg('<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>'),
     award: svg('<circle cx="12" cy="9" r="6"/><path d="m8.5 14-1.5 7 5-3 5 3-1.5-7"/>'),
     rotate: svg('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>'),
@@ -312,6 +313,28 @@
     { en: "One page, one video, one step.", id: "Satu halaman, satu video, satu langkah.", word: "step", mean: "langkah" },
     { en: "Today's effort is tomorrow's confidence.", id: "Usaha hari ini adalah rasa percaya diri esok hari.", word: "effort", mean: "usaha" },
     { en: "Don't compare your chapter one to someone else's chapter twenty.", id: "Jangan bandingkan bab satumu dengan bab dua puluh milik orang lain.", word: "compare", mean: "membandingkan" },
+    { en: "Every day is a chance to get better.", id: "Setiap hari adalah kesempatan untuk menjadi lebih baik.", word: "get better", mean: "menjadi lebih baik" },
+    { en: "Fall seven times, stand up eight.", id: "Jatuh tujuh kali, bangkit delapan kali.", word: "stand up", mean: "berdiri, bangkit" },
+    { en: "A journey of a thousand miles begins with a single step.", id: "Perjalanan seribu mil dimulai dengan satu langkah.", word: "journey", mean: "perjalanan" },
+    { en: "Practice makes progress, not perfection.", id: "Latihan membawa kemajuan, bukan kesempurnaan.", word: "perfection", mean: "kesempurnaan" },
+    { en: "The more you listen, the more you understand.", id: "Makin banyak mendengar, makin banyak yang kamu pahami.", word: "the more…, the more…", mean: "makin…, makin…" },
+    { en: "Rest if you must, but don't quit.", id: "Istirahatlah kalau perlu, tapi jangan berhenti.", word: "quit", mean: "berhenti, menyerah" },
+    { en: "Learning is a treasure that follows its owner everywhere.", id: "Ilmu adalah harta yang mengikuti pemiliknya ke mana pun.", word: "treasure", mean: "harta karun" },
+    { en: "Courage doesn't always roar.", id: "Keberanian tidak selalu bersuara keras.", word: "roar", mean: "mengaum" },
+    { en: "Quiet people have the loudest minds.", id: "Orang pendiam punya pikiran yang paling ramai.", word: "loud", mean: "keras, ramai" },
+    { en: "Believe you can, and you're halfway there.", id: "Percayalah kamu bisa, dan kamu sudah setengah jalan.", word: "halfway", mean: "setengah jalan" },
+    { en: "Small daily improvements lead to big results.", id: "Perbaikan kecil setiap hari membawa hasil besar.", word: "lead to", mean: "membawa ke, menghasilkan" },
+    { en: "A new language is a new life.", id: "Bahasa baru adalah kehidupan baru.", word: "language", mean: "bahasa" },
+    { en: "Don't be afraid to make mistakes. That's how you learn.", id: "Jangan takut salah. Begitulah caranya belajar.", word: "be afraid to", mean: "takut untuk" },
+    { en: "Your only competition is who you were yesterday.", id: "Sainganmu hanyalah dirimu yang kemarin.", word: "competition", mean: "persaingan, saingan" },
+    { en: "Start where you are. Use what you have.", id: "Mulai dari tempatmu sekarang. Pakai apa yang kamu punya.", word: "use", mean: "memakai, menggunakan" },
+    { en: "Good things take time.", id: "Hal baik butuh waktu.", word: "take time", mean: "butuh waktu" },
+    { en: "Practice in silence, and let your progress speak.", id: "Berlatihlah dalam diam, biarkan kemajuanmu yang berbicara.", word: "silence", mean: "keheningan, diam" },
+    { en: "Every word you learn opens a new door.", id: "Setiap kata yang kamu pelajari membuka pintu baru.", word: "open a door", mean: "membuka pintu (kesempatan)" },
+    { en: "Be patient with yourself.", id: "Bersabarlah dengan dirimu sendiri.", word: "patient", mean: "sabar" },
+    { en: "You are braver than you believe.", id: "Kamu lebih berani daripada yang kamu kira.", word: "brave", mean: "berani" },
+    { en: "Weekends are for growing, too.", id: "Akhir pekan juga waktu untuk bertumbuh.", word: "grow", mean: "tumbuh, berkembang" },
+    { en: "Speak, even if your voice shakes.", id: "Bicaralah, meskipun suaramu bergetar.", word: "shake", mean: "bergetar, gemetar" },
   ];
   const DAY_NAMES = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 
@@ -543,7 +566,7 @@
         : `<p class="rm-unlock">Terbuka setelah Batch ${bi} selesai · perkiraan mulai ${esc(fmtMonth(batchStart(bi)))}</p>`;
       const tagName = unlocked ? "button" : "div";
       return `
-        <${tagName} ${unlocked ? `type="button" data-batch="${bi}"` : 'aria-disabled="true"'} class="rm-card ${status}${viewBatch === bi ? " viewing" : ""}">
+        <${tagName} ${unlocked ? `type="button" data-batch="${bi}"` : 'aria-disabled="true"'} class="rm-card ${status}${viewBatch === bi ? " viewing" : ""}${justUnlocked === bi ? " just-unlocked" : ""}">
           <div class="rm-top"><span class="rm-num">Batch ${bi + 1}</span>${chip}</div>
           <h3>${esc(b.name)}</h3>
           <p class="rm-meta">${b.weeks.length} minggu · ${esc(b.level)}</p>
@@ -657,6 +680,7 @@
     if (kind === "full") {
       parts.push(`${CHEERS[Math.floor(Math.random() * CHEERS.length)]} +${XP.full} XP`);
       confetti(batchFinished ? 320 : after.level > before.level || fresh.length ? 220 : 120);
+      if (batchFinished) setTimeout(() => celebrate(batch), 650);
     } else {
       parts.push(`Tetap dihitung hadir, streak aman. +${XP.min} XP`);
     }
@@ -664,6 +688,93 @@
     if (after.level > before.level) parts.push(`Naik ke level ${after.level}: ${after.tier}!`);
     if (fresh.length) parts.push(`Pencapaian baru: ${fresh.map((b) => b.name).join(", ")}`);
     toast(parts.join(" "), { label: "Urungkan", run: () => undoLast(id, kind) });
+  }
+
+  // ---------- Perayaan batch ----------
+  let justUnlocked = null;
+  const celeDialog = $("celebrate");
+
+  function batchSummary(sessions) {
+    const ids = new Set(sessions.map((s) => s.id));
+    const logs = state.log.filter((e) => ids.has(e.id));
+    const minutes = logs.reduce((sum, e) => sum + (e.kind === "full" ? BY_ID[e.id].min : 10), 0);
+    const weekends = new Set(logs.map((e) => ymd(mondayOf(fromYmd(e.date))))).size;
+    return { sessions: sessions.length, minutes, weekends };
+  }
+
+  function celebrate(bi) {
+    const name = nameOf();
+    const b = BATCHES[bi];
+    const isFinal = bi === BATCHES.length - 1;
+    const sum = batchSummary(isFinal ? ALL : b.sessions);
+    const st = stats();
+    const statsRow = `
+      <div class="cele-stats">
+        <div><b>${sum.sessions}</b><span>sesi</span></div>
+        <div><b>${sum.minutes >= 60 ? `${Math.round(sum.minutes / 60)} jam` : `${sum.minutes} mnt`}</b><span>belajar</span></div>
+        <div><b>${sum.weekends}</b><span>akhir pekan</span></div>
+        <div><b>${st.best}</b><span>streak terbaik</span></div>
+      </div>`;
+    let content;
+    if (isFinal) {
+      content = `
+        <div class="cele-medal final">${sized(ICON.trophy, 46)}</div>
+        <p class="eyebrow">Semua ${BATCHES.length} batch tuntas</p>
+        <h2 id="celeTitle">Perjalanan selesai${name ? `, ${esc(name)}` : ""}!</h2>
+        <p class="cele-lead">Dari fondasi listening sampai simulasi IELTS, semuanya sudah Anda tempuh di akhir pekan. Itu bukan hal kecil.</p>
+        ${statsRow}
+        <ol class="cele-next">
+          <li>Cek syarat skor bahasa LPDP terbaru di situs resmi LPDP.</li>
+          <li>Pilih tanggal tes IELTS resmi, idealnya 2–4 minggu dari sekarang.</li>
+          <li>Seminggu sebelum tes, ulang satu simulasi Cambridge untuk pemanasan.</li>
+        </ol>
+        <div class="cele-actions"><button type="button" class="btn btn-primary" data-cele="close">${ICON.check} Terima kasih, Elocia</button></div>`;
+    } else {
+      const nb = BATCHES[bi + 1];
+      content = `
+        <div class="cele-medal"><span>${bi + 1}</span></div>
+        <p class="eyebrow">Batch ${bi + 1} tuntas · ${esc(b.name)}</p>
+        <h2 id="celeTitle">Selamat${name ? `, ${esc(name)}` : ""}!</h2>
+        <p class="cele-lead">${esc(b.goal)} Satu babak besar sudah selesai.</p>
+        ${statsRow}
+        <div class="unlock-card">
+          <span class="unlock-lock" aria-hidden="true">
+            <span class="lk closed">${sized(ICON.lock, 22)}</span>
+            <span class="lk open">${sized(ICON.unlock, 22)}</span>
+          </span>
+          <div class="unlock-body">
+            <span class="unlock-tag">Terbuka</span>
+            <b>Batch ${bi + 2}: ${esc(nb.name)}</b>
+            <span>${nb.weeks.length} minggu · ${esc(nb.level)} · ${esc(nb.goal)}</span>
+          </div>
+        </div>
+        <div class="cele-actions">
+          <button type="button" class="btn btn-primary" data-cele="next">Lihat Batch ${bi + 2} ${sized(ICON.arrow, 18)}</button>
+          <button type="button" class="btn btn-ghost" data-cele="close">Nanti dulu</button>
+        </div>`;
+      justUnlocked = bi + 1;
+      render();
+      setTimeout(() => (justUnlocked = null), 5000);
+    }
+    $("celeBody").innerHTML = content;
+    $("celeBody").querySelectorAll("[data-cele]").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        celeDialog.close();
+        if (btn.dataset.cele === "next") {
+          viewBatch = bi + 1;
+          render();
+          $("roadmap").scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+        }
+      })
+    );
+    celeDialog.showModal();
+    if (isFinal) fireworks();
+  }
+
+  function fireworks() {
+    [[0.5, 0.3], [0.2, 0.4], [0.8, 0.4], [0.35, 0.25], [0.65, 0.25], [0.5, 0.45]].forEach(([x, y], i) =>
+      setTimeout(() => confetti(160, x, y), 300 + i * 650)
+    );
   }
 
   function undoLast(id, kind) {
@@ -812,7 +923,7 @@
     toast("Progres dihapus. Mulai lagi dari awal.");
   });
 
-  [sheet, settings].forEach((d) =>
+  [sheet, settings, celeDialog].forEach((d) =>
     d.addEventListener("click", (e) => {
       if (e.target === d) d.close();
     })
@@ -844,51 +955,88 @@
   // ---------- Confetti ----------
   const canvas = $("confetti");
   const ctx = canvas.getContext("2d");
-  function confetti(count) {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = innerWidth * dpr;
-    canvas.height = innerHeight * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const colors = ["#0b7a5a", "#ffe15a", "#f25c2a", "#2d55d8", "#c12f63", "#11935f"];
-    const parts = Array.from({ length: count }, () => ({
-      x: innerWidth / 2 + (Math.random() - 0.5) * 160,
-      y: innerHeight * 0.35,
-      vx: (Math.random() - 0.5) * 13,
-      vy: -Math.random() * 13 - 4,
-      size: Math.random() * 7 + 5,
-      rot: Math.random() * Math.PI,
-      vr: (Math.random() - 0.5) * 0.35,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      shape: Math.random() < 0.5 ? "rect" : "circle",
-    }));
-    const t0 = performance.now();
-    function frame(t) {
-      const elapsed = t - t0;
-      ctx.clearRect(0, 0, innerWidth, innerHeight);
-      parts.forEach((p) => {
-        p.vy += 0.35;
-        p.vx *= 0.985;
-        p.x += p.vx;
-        p.y += p.vy;
-        p.rot += p.vr;
-        ctx.save();
-        ctx.globalAlpha = Math.max(0, 1 - elapsed / 2400);
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rot);
-        ctx.fillStyle = p.color;
-        if (p.shape === "rect") ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
-        else {
-          ctx.beginPath();
-          ctx.arc(0, 0, p.size / 3, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.restore();
-      });
-      if (elapsed < 2400) requestAnimationFrame(frame);
-      else ctx.clearRect(0, 0, innerWidth, innerHeight);
+  const LIFE_MS = 2400;
+  const COLORS = ["#0b7a5a", "#ffe15a", "#f25c2a", "#2d55d8", "#c12f63", "#11935f"];
+  let particles = [];
+  let running = false;
+
+  // Kanvas dibuka sebagai popover supaya tampil di atas dialog modal (perayaan) dan tidak terpotong olehnya.
+  function showLayer() {
+    if (typeof canvas.showPopover === "function") {
+      try {
+        if (canvas.matches(":popover-open")) canvas.hidePopover();
+        canvas.showPopover();
+        return;
+      } catch (e) {}
     }
-    requestAnimationFrame(frame);
+    const host = document.querySelector("dialog[open]") || document.body;
+    if (canvas.parentNode !== host) host.append(canvas);
+  }
+  function hideLayer() {
+    try {
+      if (typeof canvas.hidePopover === "function" && canvas.matches(":popover-open")) canvas.hidePopover();
+    } catch (e) {}
+  }
+
+  function confetti(count, originX = 0.5, originY = 0.35) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    showLayer();
+    const dpr = window.devicePixelRatio || 1;
+    if (canvas.width !== innerWidth * dpr || canvas.height !== innerHeight * dpr) {
+      canvas.width = innerWidth * dpr;
+      canvas.height = innerHeight * dpr;
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const born = performance.now();
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        born,
+        x: innerWidth * originX + (Math.random() - 0.5) * 160,
+        y: innerHeight * originY,
+        vx: (Math.random() - 0.5) * 13,
+        vy: -Math.random() * 13 - 4,
+        size: Math.random() * 7 + 5,
+        rot: Math.random() * Math.PI,
+        vr: (Math.random() - 0.5) * 0.35,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        shape: Math.random() < 0.5 ? "rect" : "circle",
+      });
+    }
+    if (!running) {
+      running = true;
+      requestAnimationFrame(frame);
+    }
+  }
+
+  // Satu siklus animasi untuk semua ledakan, supaya ledakan beruntun tidak saling menghapus.
+  function frame(t) {
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    particles = particles.filter((p) => t - p.born < LIFE_MS);
+    particles.forEach((p) => {
+      p.vy += 0.35;
+      p.vx *= 0.985;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vr;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, 1 - (t - p.born) / LIFE_MS);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      if (p.shape === "rect") ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+      else {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size / 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    });
+    if (particles.length) requestAnimationFrame(frame);
+    else {
+      running = false;
+      ctx.clearRect(0, 0, innerWidth, innerHeight);
+      hideLayer();
+    }
   }
 
   // Konteks untuk Elocia AI (chat.js): siapa pengguna dan sesi apa yang sedang dikerjakan.
