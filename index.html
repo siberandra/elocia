@@ -143,6 +143,15 @@
         <input id="basePath" type="text" spellcheck="false" placeholder="C:\Users\...\Downloads\World-Class English and Professional Skills">
         <small>Dipakai tombol "Salin lokasi" supaya bisa langsung ditempel di address bar File Explorer.</small>
       </label>
+      <div class="field" id="folderField">
+        <span>Putar materi langsung di Elocia</span>
+        <p class="folder-status" id="folderStatus"></p>
+        <div class="row">
+          <button type="button" class="btn btn-ghost" id="btnFolder">Hubungkan folder kursus</button>
+          <button type="button" class="btn btn-ghost" id="btnFolderOff" hidden>Putuskan</button>
+        </div>
+        <small>Hanya di Chrome atau Edge di laptop. Elocia membaca folder kursus langsung dari laptop Anda; tidak ada file yang diunggah ke mana pun.</small>
+      </div>
       <div class="field">
         <span>Cadangan progres</span>
         <div class="row">
@@ -205,7 +214,25 @@
     </form>
   </dialog>
 
+  <dialog class="viewer" id="viewer" aria-labelledby="viewerTitle">
+    <div class="viewer-head">
+      <div class="viewer-heading">
+        <span class="eyebrow" id="viewerCount"></span>
+        <h2 id="viewerTitle"></h2>
+      </div>
+      <button type="button" class="icon-btn" id="viewerPrev" aria-label="Materi sebelumnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18 9 12l6-6"/></svg></button>
+      <button type="button" class="icon-btn" id="viewerNext" aria-label="Materi berikutnya"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+      <button type="button" class="icon-btn" id="viewerClose" aria-label="Tutup"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <div class="viewer-body" id="viewerBody"></div>
+    <div class="viewer-foot">
+      <span class="viewer-tip">Tip metode 4 langkah: tonton tanpa subtitle dulu, lalu nyalakan CC di pemutar.</span>
+      <button type="button" class="btn btn-ghost" id="viewerMark">Tandai sudah dipelajari</button>
+    </div>
+  </dialog>
+
   <script src="data.js"></script>
+  <script src="media.js"></script>
   <script src="app.js"></script>
   <script src="chat.js"></script>
 </body>
