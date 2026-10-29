@@ -100,7 +100,7 @@
 
   // ---------- Penyimpanan ----------
   function emptyState() {
-    return { done: {}, log: [], basePath: "", batchStart: {}, name: "Vicky", scores: {} };
+    return { done: {}, log: [], basePath: "", batchStart: {}, name: "Vicky", scores: {}, media: {} };
   }
   function isValid(s) {
     return s && typeof s === "object" && s.done && typeof s.done === "object" && Array.isArray(s.log);
@@ -856,7 +856,7 @@
   // ---------- Materi dari folder kursus (media.js) ----------
   let materials = { sid: null, files: [] };
   const prettyName = (name) => name.replace(/(\.(pdf|mp4|mp3|webm|m4v|mov|mkv|m4a|wav|ogg|docx?|epub))+$/i, "");
-  const isWatched = (sid, rel) => !!(state.media[sid] && state.media[sid][rel]);
+  const isWatched = (sid, rel) => !!(state.media && state.media[sid] && state.media[sid][rel]);
   const MAT_ICON = { video: ICON.play, audio: ICON.mic, pdf: ICON.book, doc: ICON.book };
 
   async function loadMaterials(s, focus) {
@@ -882,6 +882,8 @@
       box.innerHTML = `${head()}
         <p class="mat-msg">Folder <b>${esc(res.missing)}</b> tidak ketemu di folder yang terhubung (<b>${esc(window.EloMedia.folderName)}</b>). Pastikan yang dipilih adalah folder <b>World-Class English and Professional Skills</b>.</p>
         <button type="button" class="btn btn-ghost" data-mat="connect">Pilih ulang folder</button>`;
+    } else if (res.status === "noroot") {
+      box.innerHTML = `${head()}<p class="mat-msg">Folder kursus <b>${esc(window.EloMedia.folderName)}</b> tidak ditemukan di laptop. Pastikan foldernya ada di Downloads, lalu jalankan ulang Elocia.</p>`;
     } else if (res.status === "error") {
       box.innerHTML = `${head()}<p class="mat-msg">Folder kursus tidak bisa dibaca. Coba hubungkan ulang lewat Pengaturan.</p>`;
     } else {
@@ -962,20 +964,23 @@
     body.innerHTML = '<p class="viewer-msg">Membuka…</p>';
     updateViewerMark();
     if (!viewer.open) viewer.showModal();
-    let file;
-    try {
-      file = await f.handle.getFile();
-    } catch (e) {
-      body.innerHTML = '<p class="viewer-msg">File tidak bisa dibaca. Coba hubungkan ulang folder kursus lewat Pengaturan.</p>';
-      return;
+    // Mode laptop: file disajikan serve.js lewat URL. Mode pilih folder: dibaca dari handle jadi blob.
+    let url = f.url || null;
+    if (!url) {
+      try {
+        url = URL.createObjectURL(await f.handle.getFile());
+        viewerUrls.push(url);
+      } catch (e) {
+        body.innerHTML = '<p class="viewer-msg">File tidak bisa dibaca. Coba hubungkan ulang folder kursus lewat Pengaturan.</p>';
+        return;
+      }
     }
     if (!viewerAt || viewerAt.index !== index) return;
     if (f.kind === "doc") {
-      body.innerHTML = `<div class="viewer-msg"><p>File .${esc(f.name.split(".").pop())} tidak bisa dibuka di browser. Buka lewat File Explorer:</p><code>${esc(s.path.split(" › ").join("\\") + "\\" + f.rel.split("/").join("\\"))}</code></div>`;
+      const where = s.path.split(" › ").join("\\") + "\\" + f.rel.split("/").join("\\");
+      body.innerHTML = `<div class="viewer-msg"><p>File .${esc(f.name.split(".").pop())} tidak bisa ditampilkan di browser. ${f.url ? "Unduh salinannya lalu buka dengan Word, atau buka" : "Buka"} lewat File Explorer:</p><code>${esc(where)}</code>${f.url ? `<p><a class="btn btn-primary" href="${f.url}" download="${esc(f.name)}">Unduh dan buka</a></p>` : ""}</div>`;
       return;
     }
-    const url = URL.createObjectURL(file);
-    viewerUrls.push(url);
     if (f.kind === "pdf") {
       body.innerHTML = `<iframe class="viewer-pdf" src="${url}" title="${esc(f.name)}"></iframe>`;
       return;
@@ -1013,6 +1018,7 @@
   }
 
   function markWatched(s, rel, toggle) {
+    state.media = state.media || {};
     state.media[s.id] = state.media[s.id] || {};
     if (state.media[s.id][rel]) {
       if (!toggle) return;
@@ -1304,6 +1310,12 @@
       return;
     }
     const status = await M.refreshStatus();
+    if (M.serverMode) {
+      $("folderStatus").textContent = status === "granted" ? `Mode laptop: terhubung otomatis ke ${M.folderName}.` : `Mode laptop: folder ${M.folderName} tidak ditemukan.`;
+      $("btnFolder").hidden = true;
+      $("btnFolderOff").hidden = true;
+      return;
+    }
     $("folderStatus").textContent =
       status === "granted" ? `Terhubung: ${M.folderName}` : status === "prompt" ? `Terhubung ke ${M.folderName}, perlu izin ulang saat membuka materi.` : "Belum terhubung.";
     $("btnFolder").textContent = status === "none" ? "Hubungkan folder kursus" : "Ganti folder";

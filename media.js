@@ -19,7 +19,9 @@
     return Object.keys(EXT).find((k) => EXT[k].includes(ext)) || null;
   };
 
-  const supported = typeof window.showDirectoryPicker === "function";
+  // Mode laptop: Elocia dibuka lewat serve.js di 127.0.0.1, folder kursus sudah tersedia tanpa memilih folder.
+  const serverMode = /^(127\.0\.0\.1|localhost)$/.test(location.hostname) && location.protocol === "http:";
+  const supported = serverMode || typeof window.showDirectoryPicker === "function";
 
   // ---------- IndexedDB untuk menyimpan handle folder ----------
   function idb(mode, fn) {
@@ -47,6 +49,15 @@
 
   async function refreshStatus() {
     if (!supported) return "unsupported";
+    if (serverMode) {
+      try {
+        const info = await (await fetch("/api/course", { cache: "no-store" })).json();
+        rootName = info.folder || "";
+        return info.ok ? "granted" : "noroot";
+      } catch (e) {
+        return "error";
+      }
+    }
     if (!root) root = await loadHandle();
     if (!root) {
       permission = "none";
@@ -151,6 +162,8 @@
 
   // Browser hanya memahami WebVTT; file SRT diubah sedikit supaya bisa dipakai.
   async function subtitleUrl(handle) {
+    // Di mode laptop subtitle berupa URL; server sudah mengubah SRT menjadi WebVTT.
+    if (typeof handle === "string") return /\.srt$/i.test(handle) ? `${handle}?vtt=1` : handle;
     const text = await (await handle.getFile()).text();
     const vtt = /^WEBVTT/.test(text.trimStart()) ? text : "WEBVTT\n\n" + text.replace(/\r/g, "").replace(/(\d\d:\d\d:\d\d),(\d\d\d)/g, "$1.$2");
     return URL.createObjectURL(new Blob([vtt], { type: "text/vtt" }));
@@ -178,23 +191,33 @@
     return files;
   }
 
+  function finish(files, pick) {
+    const collator = new Intl.Collator("id", { numeric: true, sensitivity: "base" });
+    const order = { video: 0, audio: 1, pdf: 2, doc: 3 };
+    const picked = applyPick(files, pick).sort((x, y) => order[x.kind] - order[y.kind] || collator.compare(x.rel, y.rel));
+    return { status: "granted", files: picked, total: files.length };
+  }
+
   async function listFor(session) {
     const status = await refreshStatus();
     if (status !== "granted") return { status };
+    if (serverMode) {
+      const res = await (await fetch(`/api/course/list?path=${encodeURIComponent(session.path)}`, { cache: "no-store" })).json();
+      if (res.status !== "granted") return res;
+      return finish(res.files, session.pick);
+    }
     const { dir, missing } = await resolveDir(session.path);
     if (!dir) return { status: "missing", missing };
     const files = [];
     const subs = [];
     await walk(dir, "", 2, files, subs);
     attachSubtitles(files, subs);
-    const collator = new Intl.Collator("id", { numeric: true, sensitivity: "base" });
-    const order = { video: 0, audio: 1, pdf: 2, doc: 3 };
-    const picked = applyPick(files, session.pick).sort((x, y) => order[x.kind] - order[y.kind] || collator.compare(x.rel, y.rel));
-    return { status: "granted", files: picked, total: files.length };
+    return finish(files, session.pick);
   }
 
   window.EloMedia = {
     supported,
+    serverMode,
     refreshStatus,
     connect,
     allow,
