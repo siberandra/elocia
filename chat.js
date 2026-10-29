@@ -582,6 +582,16 @@
 
   window.EloChat = { open };
 
+  // Mode laptop: kalau belum ada kunci di browser ini, ambil dari elocia.local.json lewat server lokal.
+  if (window.EloMedia && window.EloMedia.serverMode && !store.get(KEY_STORE)) {
+    fetch("/api/local-config", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((cfg) => {
+        if (cfg.geminiKey && !store.get(KEY_STORE)) store.set(KEY_STORE, cfg.geminiKey);
+      })
+      .catch(() => {});
+  }
+
   // ---------- Ikon ----------
   var ICON_SEND, ICON_STOP, ICON_SPEAK, ICON_SPARK, ICON_KEY;
   function icon(body) {

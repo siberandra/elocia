@@ -177,6 +177,15 @@ const server = http.createServer((req, res) => {
     const exists = fs.existsSync(COURSE_DIR) && fs.statSync(COURSE_DIR).isDirectory();
     return sendJSON(res, 200, { ok: exists, folder: path.basename(COURSE_DIR) });
   }
+  // Pengaturan pribadi khusus laptop (misalnya kunci Gemini) dari elocia.local.json, yang tidak ikut ke Git.
+  if (url.pathname === "/api/local-config") {
+    try {
+      const cfg = JSON.parse(fs.readFileSync(path.join(APP_DIR, "elocia.local.json"), "utf8"));
+      return sendJSON(res, 200, { geminiKey: typeof cfg.geminiKey === "string" ? cfg.geminiKey : "" });
+    } catch (e) {
+      return sendJSON(res, 200, {});
+    }
+  }
   if (url.pathname === "/api/course/list") {
     try {
       return sendJSON(res, 200, listSession(url.searchParams.get("path") || ""));
