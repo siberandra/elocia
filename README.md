@@ -8,7 +8,7 @@ Klik dua kali **`Buka Elocia.cmd`** (atau shortcut **Elocia** di Desktop). Eloci
 dan langsung terhubung ke folder `Downloads\World-Class English and Professional Skills`, jadi video, audio, dan PDF
 tiap sesi bisa diputar tanpa memilih folder. Butuh Node.js. Server hanya mendengarkan di 127.0.0.1.
 
-Folder kursus di tempat lain: `node serve.js "D:\path\keolder kursus"`.
+Folder kursus di tempat lain: `node serve.js "D:\path\ke\folder kursus"`.
 
 Progres di versi laptop terpisah dari versi online (beda alamat). Pindahkan dengan **Pengaturan → Unduh cadangan / Pulihkan dari file**.
 
