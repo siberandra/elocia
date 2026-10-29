@@ -235,6 +235,8 @@
       "Gaya: hangat, sabar, menyemangati tanpa berlebihan, ringkas (maksimal sekitar 150 kata kecuali diminta lebih), memakai markdown sederhana (paragraf pendek, daftar, **tebal**).",
       "Jangan pernah meminta data pribadi seperti alamat, nomor identitas, atau kata sandi.",
       `Posisi perjalanan: ${ctx.batch || "-"}. ${session}`,
+      ctx.scores ? `Skor simulasi IELTS yang sudah dicatat (band): ${ctx.scores}. Pakai ini untuk memberi saran yang spesifik bila relevan.` : "",
+      "Saat diminta menilai Writing atau Speaking IELTS, beri band per kriteria resmi dan satu angka band akhir (kelipatan 0,5) supaya bisa dicatat di Mode Ujian.",
       MODES[mode].prompt,
     ].join("\n");
   }

@@ -28,7 +28,8 @@
   const SPEAK_NOTE = "Di bagian speaking practice, jawab dengan suara keras sebelum jawaban contoh muncul. Jangan dijawab dalam hati.";
   const VOCAB_NOTE = "Tonton keenam videonya berurutan. Di Pronunciation Training dan Speaking Practice, ikuti dan jawab dengan suara keras.";
   const REC_NOTE = "Rekam suara pakai HP, cukup 1 menit. Dengarkan ulang sekali, lalu simpan untuk dibandingkan nanti.";
-  const MOCK_NOTE = "Kerjakan dengan timer seperti tes sungguhan. Cek jawaban di bagian answer key, lalu catat skor dan jenis soal yang paling sering salah.";
+  const EXAM_NOTE = "Buka Mode Ujian di bawah: nyalakan timer tiap bagian, tulis jawaban di Sample Answer Sheets (buku hal. 397), cek di Answer Key (hal. 366), lalu masukkan jumlah jawaban benar.";
+  const DVD_NOTE = "Audionya ada di DVD: klik dua kali file .iso di folder yang sama, lalu buka folder Audio atau jalankan Cambridge IELTS.exe. Nomor trek tertulis di buku di samping ikon audio.";
 
   window.PLAN = {
     start: [2026, 9, 31], // Sabtu, 31 Oktober 2026 (bulan 0-based)
@@ -289,28 +290,28 @@
         id: "b4",
         name: "Persiapan IELTS",
         level: "Target band 6.5",
-        goal: "Paham format tes, punya strategi, dan lulus 3 simulasi.",
-        points: ["Strategi Magoosh tiap bagian", "Latihan soal Cambridge 1–6", "3 simulasi tes penuh"],
+        goal: "Paham format tes, punya strategi, dan berlatih dengan 8 tes resmi.",
+        points: ["Official Cambridge Guide: 4 skill", "8 practice test resmi + Mode Ujian", "Skor band tiap simulasi"],
         months: [
           {
             name: "Kenal Tesnya",
-            theme: "Format, skor awal, reading",
+            theme: "Format, skor awal, listening, reading",
             weeks: [
               {
-                sat: { kind: "test", what: "Magoosh: Introduction to the IELTS + rencana belajar", path: P.mag + " › 1. Introduction to the IELTS", min: 50, note: "Sebelas video singkat. Lanjutkan dengan membaca 3-Month Study Plan di folder IELTS Study Plans." },
-                sun: { kind: "test", what: "Tes diagnostik: Cambridge 1 Test 1 (Listening + Reading)", path: P.cam + " › Cambridge 1", min: 100, note: "Kerjakan tanpa persiapan, dengan timer. Catat skor ini sebagai titik awal. Boleh dibagi dua hari." },
+                sat: { kind: "test", what: "Magoosh: Introduction to the IELTS + IELTS Summary", path: P.mag + " › 1. Introduction to the IELTS", min: 50, note: "Sebelas video singkat, lalu baca bagian IELTS Summary di buku Official Cambridge Guide (hal. 7–12)." },
+                sun: { kind: "test", what: "Tes diagnostik: Practice Test 1 (Listening + Reading)", path: P.ocg, min: 110, note: "Buku hal. 154. Test 1 berisi petunjuk dan tips, cocok untuk percobaan pertama. " + EXAM_NOTE + " Skor ini jadi titik awal, berapa pun hasilnya tidak apa-apa.", exam: { test: "ocg1", label: "Practice Test 1", parts: ["L", "R"] } },
               },
               {
-                sat: { kind: "reading", what: "Magoosh: IELTS Skills (skimming, scanning, paraphrasing)", path: P.mag + " › 2. IELTS Skills", min: 45, note: "Tujuh video. Paraphrasing dipakai di semua bagian tes." },
-                sun: { kind: "reading", what: "Magoosh Reading: video 1 sampai 6", path: P.mag + " › 3. Reading", min: 45, note: "SUN Method dan jenis soal matching." },
+                sat: { kind: "listening", what: "Official Guide Listening: Unit 1–4", path: P.ocg, min: 60, note: "Buku hal. 15–28: konteks, ejaan, angka, paraphrase, peta dan arah. " + DVD_NOTE },
+                sun: { kind: "listening", what: "Official Guide Listening: Unit 5–8", path: P.ocg, min: 60, note: "Buku hal. 29–41: proses, opini, lecture, dan kata penanda. " + DVD_NOTE },
               },
               {
-                sat: { kind: "reading", what: "Magoosh Reading: video 7 sampai 13", path: P.mag + " › 3. Reading", min: 50, note: "True/False/Not Given dan soal completion." },
-                sun: { kind: "test", what: "Latihan: Cambridge 2 Test 1, Reading saja", path: P.cam + " › Cambridge 2", min: 60, note: MOCK_NOTE },
+                sat: { kind: "reading", what: "Official Guide Reading: Unit 1–4", path: P.ocg, min: 60, note: "Buku hal. 44–63: skimming, scanning, ide utama, dan matching information." },
+                sun: { kind: "reading", what: "Official Guide Reading: Unit 5–7", path: P.ocg, min: 60, note: "Buku hal. 64–77: teks argumentatif, pilihan ganda, dan Yes/No/Not Given. Unit 8 khusus General Training, boleh dilewati." },
               },
               {
-                sat: { kind: "listening", what: "Magoosh Listening: video 1 sampai 7", path: P.mag + " › 4. Listening", min: 45, note: "APT Method dan pengenalan Part 1–4." },
-                sun: { kind: "listening", what: "Magoosh Listening 8 sampai 13 + Cambridge 2 Test 1 Listening", path: P.mag + " › 4. Listening", min: 70, note: "Tonton jenis soalnya dulu, lalu kerjakan Listening Cambridge 2 Test 1. " + MOCK_NOTE },
+                sat: { kind: "listening", what: "Magoosh: IELTS Skills + strategi Listening", path: P.mag, min: 55, note: "Folder 2. IELTS Skills (7 video), lalu 4. Listening video 1–3: cara latihan, tips, dan APT Method." },
+                sun: { kind: "test", what: "Practice Test 2: Listening + Reading", path: P.ocg, min: 100, note: "Buku hal. 173. " + EXAM_NOTE, exam: { test: "ocg2", label: "Practice Test 2", parts: ["L", "R"] } },
               },
             ],
           },
@@ -319,42 +320,42 @@
             theme: "Task 1, Task 2, dan wawancara",
             weeks: [
               {
-                sat: { kind: "writing", what: "Magoosh Writing: video 1 sampai 9 (Task 1)", path: P.mag + " › 6. Writing", min: 55, note: "Cara mendeskripsikan grafik, tabel, dan proses." },
-                sun: { kind: "writing", what: "Tulis Writing Task 1 dari Cambridge 3 Test 1", path: P.cam + " › Cambridge 3", min: 40, note: "Batas 20 menit dan minimal 150 kata. Lalu bandingkan dengan contoh jawaban." },
+                sat: { kind: "writing", what: "Official Guide Writing: Unit 1–2 (grafik dan tabel)", path: P.ocg, min: 60, note: "Buku hal. 93–105: membaca dan membandingkan data untuk Task 1." },
+                sun: { kind: "writing", what: "Official Guide Writing: Unit 3–4 + tulis satu Task 1", path: P.ocg, min: 60, note: "Buku hal. 106–112: diagram, proses, dan peta. Tulis satu Task 1 (20 menit, minimal 150 kata), lalu minta Elocia AI menilainya." },
               },
               {
-                sat: { kind: "writing", what: "Magoosh Writing: video 10 sampai 15 (struktur Task 2)", path: P.mag + " › 6. Writing", min: 50, note: "Introduction, thesis, body paragraph, conclusion." },
-                sun: { kind: "writing", what: "Write to Score High 03–04 + tulis satu essay Task 2", path: P.wtsh, min: 60, note: "Tonton bab 03 dan 04, lalu tulis essay dalam 40 menit, minimal 250 kata." },
+                sat: { kind: "writing", what: "Official Guide Writing: Unit 6–8 (Task 2)", path: P.ocg, min: 60, note: "Buku hal. 119–133: merencanakan, menghubungkan ide, dan mengecek kesalahan. Unit 5 khusus General Training, boleh dilewati." },
+                sun: { kind: "writing", what: "Magoosh Writing 10–20 + tulis satu essay Task 2", path: P.mag + " › 6. Writing", min: 70, note: "Struktur dan jenis essay, lalu tulis essay 40 menit, minimal 250 kata. Tempel ke Elocia AI (Tanya bebas) dan minta perkiraan band beserta alasannya." },
               },
               {
-                sat: { kind: "writing", what: "Magoosh Writing: video 16 sampai 20 (jenis essay)", path: P.mag + " › 6. Writing", min: 45, note: "Advantages/disadvantages, agree/disagree, cause/solution." },
-                sun: { kind: "writing", what: "Tulis Writing Task 2 dari Cambridge 3 Test 2", path: P.cam + " › Cambridge 3", min: 50, note: "Batas 40 menit. Cek ulang articles dan kesalahan umum dari Batch 2." },
+                sat: { kind: "speaking", what: "Official Guide Speaking: Unit 1–2 + video contoh", path: P.ocg, min: 55, note: "Buku hal. 136–144: Part 1 dan Part 2. Tonton video Speaking di DVD atau di folder IELTS Speaking Section Examples." },
+                sun: { kind: "speaking", what: "Official Guide Speaking: Unit 3–4 + latihan dengan Elocia AI", path: P.ocg, min: 50, note: "Buku hal. 145–153: Part 3, pengucapan, dan menilai diri. Lalu coba mode Penguji IELTS di Elocia AI." },
               },
               {
-                sat: { kind: "speaking", what: "Magoosh Speaking: video 1 sampai 7", path: P.mag + " › 5. Speaking", min: 50, note: "Part 1, Part 2, Part 3, dan struktur jawaban." },
-                sun: { kind: "speaking", what: "Latihan Speaking Part 1–3 dengan soal Cambridge 4 Test 1", path: P.cam + " › Cambridge 4", min: 40, note: "Rekam semua jawaban. Part 2: siapkan 1 menit, bicara 2 menit." },
+                sat: { kind: "test", what: "Practice Test 3: Listening, Reading, Writing", path: P.ocg, min: 170, note: "Buku hal. 190. " + EXAM_NOTE + " Sesi panjang, boleh dibagi Sabtu–Minggu.", exam: { test: "ocg3", label: "Practice Test 3", parts: ["L", "R", "W"] } },
+                sun: { kind: "test", what: "Practice Test 3: Speaking dengan Elocia AI + review", path: P.ocg, min: 45, note: "Pakai soal Speaking Test 3 di buku dan mode Penguji IELTS di Elocia AI. Masukkan band Speaking dari Elocia AI di Mode Ujian, supaya Overall band Test 3 terhitung.", exam: { test: "ocg3", label: "Practice Test 3", parts: ["S"] } },
               },
             ],
           },
           {
             name: "Simulasi",
-            theme: "Tes penuh dan daftar",
+            theme: "Tes penuh, skor band, dan daftar",
             weeks: [
               {
-                sat: { kind: "speaking", what: "Magoosh Speaking: video 8 sampai 14", path: P.mag + " › 5. Speaking", min: 55, note: "Cara menaikkan band score dan 3 contoh wawancara." },
-                sun: { kind: "speaking", what: "Contoh Speaking resmi + rekam Part 2", path: P.ocg + " › IELTS Speaking Section Examples", min: 40, note: "Tonton contohnya, lalu rekam jawaban Anda untuk topik yang sama dan bandingkan." },
+                sat: { kind: "test", what: "Practice Test 4: tes penuh", path: P.ocg, min: 180, note: "Buku hal. 207. " + EXAM_NOTE + " Speaking dengan mode Penguji IELTS di Elocia AI.", exam: { test: "ocg4", label: "Practice Test 4", parts: ["L", "R", "W", "S"] } },
+                sun: { kind: "speaking", what: "Magoosh Speaking: contoh wawancara + review Test 4", path: P.mag + " › 5. Speaking", min: 50, note: "Video 8–14: cara menaikkan band dan 3 contoh wawancara. Lalu tulis 3 kesalahan terbesar dari Test 4." },
               },
               {
-                sat: { kind: "test", what: "Simulasi #1: Cambridge 5 Test 1 (Listening, Reading, Writing)", path: P.cam + " › Cambridge 5", min: 170, note: MOCK_NOTE + " Sesi panjang, boleh dibagi Sabtu–Minggu." },
-                sun: { kind: "test", what: "Simulasi #1: Speaking + review kesalahan", path: P.cam + " › Cambridge 5", min: 45, note: "Rekam Speaking Test 1, lalu tulis 3 kesalahan terbesar dari simulasi ini." },
+                sat: { kind: "test", what: "Practice Test 5: Listening, Reading, Writing", path: P.ocg, min: 170, note: "Buku hal. 226. " + EXAM_NOTE, exam: { test: "ocg5", label: "Practice Test 5", parts: ["L", "R", "W"] } },
+                sun: { kind: "test", what: "Practice Test 5: Speaking + review", path: P.ocg, min: 45, note: "Speaking dengan mode Penguji IELTS di Elocia AI, lalu bandingkan band Test 5 dengan Test 3.", exam: { test: "ocg5", label: "Practice Test 5", parts: ["S"] } },
               },
               {
-                sat: { kind: "test", what: "Simulasi #2: Cambridge 6 Test 1 (Listening + Reading)", path: P.cam + " › Cambridge 6", min: 120, note: MOCK_NOTE },
-                sun: { kind: "test", what: "Simulasi #2: Writing Cambridge 6 Test 1 + review", path: P.cam + " › Cambridge 6", min: 70, note: "Task 1 dan Task 2 dalam 60 menit, persis seperti tes." },
+                sat: { kind: "test", what: "Practice Test 6: tes penuh", path: P.ocg, min: 180, note: "Buku hal. 246. " + EXAM_NOTE, exam: { test: "ocg6", label: "Practice Test 6", parts: ["L", "R", "W", "S"] } },
+                sun: { kind: "test", what: "Practice Test 7: Listening + Reading", path: P.ocg, min: 100, note: "Buku hal. 266. " + EXAM_NOTE, exam: { test: "ocg7", label: "Practice Test 7", parts: ["L", "R"] } },
               },
               {
-                sat: { kind: "test", what: "Simulasi #3: Cambridge 6 Test 2 penuh", path: P.cam + " › Cambridge 6", min: 180, note: MOCK_NOTE + " Kalau skornya sudah dekat target, Anda siap daftar tes." },
-                sun: { kind: "test", what: "Evaluasi dan pilih tanggal tes IELTS", path: P.plans, min: 30, note: "Bandingkan skor diagnostik dengan simulasi #3. Cek syarat LPDP terbaru, lalu pilih tanggal tes resmi." },
+                sat: { kind: "test", what: "Simulasi akhir: Practice Test 8 penuh", path: P.ocg, min: 180, note: "Buku hal. 300. Simulasi terakhir, kerjakan persis seperti hari tes. " + EXAM_NOTE, exam: { test: "ocg8", label: "Practice Test 8", parts: ["L", "R", "W", "S"] } },
+                sun: { kind: "test", what: "Evaluasi dan pilih tanggal tes IELTS", path: P.plans, min: 30, note: "Bandingkan skor Practice Test 1 dengan Practice Test 8 di Mode Ujian. Cek syarat LPDP terbaru, lalu pilih tanggal tes resmi. Sambil menunggu hari tes, Cambridge IELTS 1–6 bisa jadi latihan tambahan." },
               },
             ],
           },

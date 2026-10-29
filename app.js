@@ -100,7 +100,7 @@
 
   // ---------- Penyimpanan ----------
   function emptyState() {
-    return { done: {}, log: [], basePath: "", batchStart: {}, name: "Vicky" };
+    return { done: {}, log: [], basePath: "", batchStart: {}, name: "Vicky", scores: {} };
   }
   function isValid(s) {
     return s && typeof s === "object" && s.done && typeof s.done === "object" && Array.isArray(s.log);
@@ -108,6 +108,7 @@
   function normalize(s) {
     const n = Object.assign(emptyState(), s);
     if (!n.batchStart || typeof n.batchStart !== "object") n.batchStart = {};
+    if (!n.scores || typeof n.scores !== "object") n.scores = {};
     return n;
   }
   function load() {
@@ -451,7 +452,13 @@
       { label: "Total waktu belajar", value: minutes ? fmtDuration(minutes) : "0 mnt", foot: minutes ? `dari ${state.log.length} catatan sesi` : "Mulai dari sesi pertama" },
       { label: "Hari paling rajin", value: favDay !== undefined ? DAY_NAMES[favDay] : "Belum ada", foot: favDay !== undefined ? `${dayCount[favDay]} sesi di hari ${DAY_NAMES[favDay]}` : "Terlihat setelah beberapa sesi" },
       { label: `Sisa Batch ${st.active + 1}`, value: allDone() ? "Selesai" : `${remaining} sesi`, foot: allDone() ? "Semua batch tuntas" : `±${fmtDuration(remainingMin)} · ±${Math.ceil(remaining / 2)} akhir pekan` },
-      { label: "Paling banyak dipelajari", value: topKind ? KIND_LABEL[topKind] : "Belum ada", foot: topKind ? `${kindCount[topKind]} sesi selesai` : "Terlihat setelah sesi pertama" },
+      (() => {
+        const sc = latestScore();
+        if (!sc) return { label: "Paling banyak dipelajari", value: topKind ? KIND_LABEL[topKind] : "Belum ada", foot: topKind ? `${kindCount[topKind]} sesi selesai` : "Terlihat setelah sesi pertama" };
+        const ov = overallBand(sc);
+        const parts = ["L", "R", "W", "S"].filter((p) => sc[p]).map((p) => `${p} ${fmtBand(sc[p].band)}`);
+        return { label: "Skor simulasi terakhir", value: ov !== null ? `Band ${fmtBand(ov)}` : parts[0] ? parts.join(" · ") : "–", foot: `${sc.label}${ov !== null ? ` · ${parts.join(" · ")}` : ""}` };
+      })(),
     ];
 
     $("phrase").innerHTML = `
@@ -502,9 +509,11 @@
       <div class="hero-actions">
         <button type="button" class="btn btn-primary" id="heroDone">${ICON.check} Selesai</button>
         <button type="button" class="btn btn-ghost" id="heroMin">Cuma sempat 1 video</button>
+        ${s.exam ? `<button type="button" class="btn btn-ghost" id="heroExam">${ICON.clock} Mode Ujian</button>` : ""}
       </div>
       <button type="button" class="hero-ask" id="heroAsk">${sized(ICON.spark, 16)} Bingung? Tanya Elocia tentang sesi ini</button>`;
     $("heroAsk").addEventListener("click", () => window.EloChat && window.EloChat.open("kuis"));
+    if ($("heroExam")) $("heroExam").addEventListener("click", () => openSession(s.id));
     $("heroCopy").addEventListener("click", () => copyPath(s));
     $("heroDone").addEventListener("click", () => complete(s.id, "full"));
     $("heroMin").addEventListener("click", () => complete(s.id, "min"));
@@ -813,6 +822,7 @@
       <p class="muted">${esc(s.note)}</p>
       <div class="path-box">${esc(s.path)}</div>
       ${status}
+      ${s.exam ? examPanel(s) : ""}
       <div class="row">
         <button type="button" class="btn btn-ghost" data-act="copy">${ICON.copy} Salin lokasi</button>
         ${
@@ -826,12 +836,170 @@
       b.addEventListener("click", () => {
         const act = b.dataset.act;
         if (act === "copy") return copyPath(s);
+        if (act === "score") return saveScore(s);
         sheet.close();
         if (act === "undo") undoLast(s.id, "full");
         else complete(s.id, act);
       });
     });
+    if (s.exam) bindExamPanel(s);
     sheet.showModal();
+  }
+
+  // ---------- Mode Ujian (IELTS) ----------
+  const EXAM_PARTS = {
+    L: { name: "Listening", min: 30, info: "30 menit + 10 menit memindahkan jawaban · 40 soal", raw: true },
+    R: { name: "Reading", min: 60, info: "60 menit · 40 soal", raw: true },
+    W: { name: "Writing", min: 60, info: "60 menit · Task 1 + Task 2 · band dari Elocia AI", raw: false },
+    S: { name: "Speaking", min: 14, info: "11–14 menit · band dari mode Penguji IELTS", raw: false },
+  };
+  // Perkiraan umum konversi jumlah benar (dari 40) ke band, IELTS Academic.
+  const BAND_TABLE = {
+    L: [[39, 9], [37, 8.5], [35, 8], [32, 7.5], [30, 7], [26, 6.5], [23, 6], [18, 5.5], [16, 5], [13, 4.5], [10, 4], [8, 3.5], [6, 3], [4, 2.5], [1, 2]],
+    R: [[39, 9], [37, 8.5], [35, 8], [33, 7.5], [30, 7], [27, 6.5], [23, 6], [19, 5.5], [15, 5], [13, 4.5], [10, 4], [8, 3.5], [6, 3], [4, 2.5], [1, 2]],
+  };
+  const rawToBand = (part, raw) => {
+    for (const [min, band] of BAND_TABLE[part]) if (raw >= min) return band;
+    return 0;
+  };
+  // Pembulatan Overall ala IELTS: rata-rata dibulatkan ke 0,5 terdekat; ,25 naik ke ,5 dan ,75 naik ke bilangan bulat.
+  function overallBand(rec) {
+    const bands = ["L", "R", "W", "S"].map((p) => (rec && rec[p] ? rec[p].band : null));
+    if (bands.some((b) => b === null || b === undefined)) return null;
+    const avg = bands.reduce((a, b) => a + b, 0) / 4;
+    const whole = Math.floor(avg);
+    const frac = avg - whole;
+    return frac < 0.25 ? whole : frac < 0.75 ? whole + 0.5 : whole + 1;
+  }
+  const fmtBand = (b) => (b === null || b === undefined ? "–" : b.toFixed(1).replace(".", ","));
+
+  function examPanel(s) {
+    const rec = state.scores[s.exam.test] || {};
+    const rows = s.exam.parts
+      .map((p) => {
+        const cfg = EXAM_PARTS[p];
+        const saved = rec[p];
+        const input = cfg.raw
+          ? `<input type="number" inputmode="numeric" min="0" max="40" step="1" id="raw-${p}" data-part="${p}" value="${saved ? saved.raw : ""}" placeholder="0–40" aria-label="Jumlah benar ${cfg.name}"><span class="exam-of">/40</span>`
+          : `<input type="number" inputmode="decimal" min="0" max="9" step="0.5" id="band-${p}" data-part="${p}" value="${saved ? saved.band : ""}" placeholder="0–9" aria-label="Band ${cfg.name}"><span class="exam-of">band</span>`;
+        return `
+          <div class="exam-row">
+            <div class="exam-part"><b>${cfg.name}</b><span>${cfg.info}</span></div>
+            <button type="button" class="btn btn-ghost exam-timer-btn" data-timer="${p}">${sized(ICON.clock, 16)} ${cfg.min}:00</button>
+            <div class="exam-score">${input}<span class="exam-band" id="bandOut-${p}">${saved ? fmtBand(saved.band) : "–"}</span></div>
+          </div>`;
+      })
+      .join("");
+    const overall = overallBand(rec);
+    return `
+      <section class="exam" aria-label="Mode Ujian">
+        <div class="exam-head">
+          <span class="exam-title">${sized(ICON.clock, 18)} Mode Ujian · ${esc(s.exam.label)}</span>
+          <span class="exam-overall">Overall <b id="examOverall">${fmtBand(overall)}</b></span>
+        </div>
+        ${rows}
+        <div class="exam-foot">
+          <p>Listening dan Reading dikonversi dengan tabel perkiraan IELTS Academic. Writing dan Speaking: minta Elocia AI menilai, lalu isi band-nya. Overall muncul setelah keempat bagian terisi.</p>
+          <button type="button" class="btn btn-primary" data-act="score">Simpan skor</button>
+        </div>
+      </section>`;
+  }
+
+  function readExamInputs(s) {
+    const out = {};
+    s.exam.parts.forEach((p) => {
+      const cfg = EXAM_PARTS[p];
+      const el = $(cfg.raw ? `raw-${p}` : `band-${p}`);
+      if (!el || el.value === "") return;
+      let v = Number(el.value);
+      if (!Number.isFinite(v)) return;
+      if (cfg.raw) {
+        v = Math.max(0, Math.min(40, Math.round(v)));
+        out[p] = { raw: v, band: rawToBand(p, v) };
+      } else {
+        v = Math.max(0, Math.min(9, Math.round(v * 2) / 2));
+        out[p] = { band: v };
+      }
+    });
+    return out;
+  }
+
+  function bindExamPanel(s) {
+    const refresh = () => {
+      const now = readExamInputs(s);
+      s.exam.parts.forEach((p) => ($(`bandOut-${p}`).textContent = now[p] ? fmtBand(now[p].band) : "–"));
+      $("examOverall").textContent = fmtBand(overallBand(Object.assign({}, state.scores[s.exam.test], now)));
+    };
+    $("sheetBody").querySelectorAll(".exam input").forEach((el) => el.addEventListener("input", refresh));
+    $("sheetBody").querySelectorAll("[data-timer]").forEach((b) =>
+      b.addEventListener("click", () => startTimer(EXAM_PARTS[b.dataset.timer].name, EXAM_PARTS[b.dataset.timer].min))
+    );
+  }
+
+  function saveScore(s) {
+    const now = readExamInputs(s);
+    if (!Object.keys(now).length) return toast("Isi dulu jumlah jawaban benar atau band-nya.");
+    const rec = Object.assign({}, state.scores[s.exam.test], now, { label: s.exam.label, date: ymd(new Date()) });
+    state.scores[s.exam.test] = rec;
+    save();
+    render();
+    const parts = s.exam.parts.filter((p) => now[p]).map((p) => `${EXAM_PARTS[p].name} ${fmtBand(now[p].band)}`);
+    const overall = overallBand(rec);
+    toast(`Skor tersimpan: ${parts.join(", ")}${overall !== null ? `. Overall ${fmtBand(overall)}` : ""}.`);
+    if ($("examOverall")) $("examOverall").textContent = fmtBand(overall);
+  }
+
+  function latestScore() {
+    const recs = Object.values(state.scores || {}).filter((r) => r && r.date);
+    if (!recs.length) return null;
+    return recs.sort((a, b) => (a.date < b.date ? 1 : -1))[0];
+  }
+
+  // Timer ujian tetap berjalan walaupun panel ditutup; tampil sebagai pil kecil di pojok kiri bawah.
+  let timer = null;
+  function startTimer(label, minutes) {
+    stopTimer(true);
+    const end = Date.now() + minutes * 60000;
+    const pill = $("examTimer");
+    const tick = () => {
+      const left = Math.max(0, end - Date.now());
+      const m = Math.floor(left / 60000);
+      const sec = Math.floor((left % 60000) / 1000);
+      $("examTimerText").textContent = `${label} ${pad(m)}:${pad(sec)}`;
+      pill.classList.toggle("warn", left <= 5 * 60000);
+      if (left <= 0) {
+        stopTimer(true);
+        beep();
+        toast(`Waktu ${label} habis. Berhenti menulis, lalu cek jawaban.`);
+      }
+    };
+    timer = { id: setInterval(tick, 1000), label };
+    pill.hidden = false;
+    tick();
+    toast(`Timer ${label} ${minutes} menit dimulai. Semangat!`);
+  }
+  function stopTimer(silent) {
+    if (timer) clearInterval(timer.id);
+    timer = null;
+    $("examTimer").hidden = true;
+    if (!silent) toast("Timer dihentikan.");
+  }
+  $("examTimerStop").addEventListener("click", () => stopTimer(false));
+  function beep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [0, 0.35, 0.7].forEach((t) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.frequency.value = 880;
+        g.gain.setValueAtTime(0.25, ctx.currentTime + t);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.3);
+        o.connect(g).connect(ctx.destination);
+        o.start(ctx.currentTime + t);
+        o.stop(ctx.currentTime + t + 0.3);
+      });
+    } catch (e) {}
+    if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
   }
 
   $("journey").addEventListener("click", (e) => {
@@ -1049,6 +1217,10 @@
         name: nameOf(),
         batch: `Batch ${st.active + 1} dari ${BATCHES.length}: ${b.name} (${b.level}), ${st.activeDone} dari ${b.sessions.length} sesi selesai`,
         session: s ? { what: s.what, kind: KIND_LABEL[s.kind], note: s.note } : null,
+        scores: Object.values(state.scores || {})
+          .filter((r) => r && r.date)
+          .map((r) => `${r.label}: ${["L", "R", "W", "S"].filter((p) => r[p]).map((p) => `${EXAM_PARTS[p].name} ${r[p].band}`).join(", ")}`)
+          .join("; "),
       };
     },
   };
