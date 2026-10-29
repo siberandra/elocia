@@ -191,10 +191,17 @@
     return files;
   }
 
+  // Urutan: jenis file (video, audio, PDF, dokumen), lalu urutan nama di pick.names
+  // (urutan belajar yang ditetapkan per sesi), lalu urutan alami nama file.
   function finish(files, pick) {
     const collator = new Intl.Collator("id", { numeric: true, sensitivity: "base" });
     const order = { video: 0, audio: 1, pdf: 2, doc: 3 };
-    const picked = applyPick(files, pick).sort((x, y) => order[x.kind] - order[y.kind] || collator.compare(x.rel, y.rel));
+    const keys = pick && pick.names ? pick.names.map((n) => n.toLowerCase()) : [];
+    const rank = (f) => {
+      const i = keys.findIndex((k) => f.rel.toLowerCase().includes(k));
+      return i === -1 ? keys.length : i;
+    };
+    const picked = applyPick(files, pick).sort((x, y) => order[x.kind] - order[y.kind] || rank(x) - rank(y) || collator.compare(x.rel, y.rel));
     return { status: "granted", files: picked, total: files.length };
   }
 

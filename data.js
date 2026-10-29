@@ -51,7 +51,7 @@
             theme: "Peta tenses dan melatih telinga",
             weeks: [
               {
-                sat: { kind: "grammar", what: "Tenses Simplified: Introduction + Cara Memahami Tenses", pick: { names: ["Introduction", "Cara Memahami"] }, path: P.tenses, min: 45, note: "Berbahasa Indonesia. Cukup tangkap gambaran besarnya, tidak perlu hafal." },
+                sat: { kind: "grammar", what: "Tenses Simplified: Cara Memahami Tenses + Introduction", pick: { names: ["Cara Memahami", "Introduction"] }, path: P.tenses, min: 45, note: "Berbahasa Indonesia. Tonton Cara Memahami Tenses dulu untuk gambaran besar, lalu Introduction sebagai pembuka seri Video 1–4 minggu depan. Cukup tangkap gambaran besarnya, tidak perlu hafal." },
                 sun: { kind: "listening", what: "Daily Conversations: Talking about Hobbies + Catching up at a Mall", pick: { names: ["Hobbies", "Catching up"] }, path: P.dc + " › Personal › With Friends", min: 20, note: "Pakai cara 4 langkah. Transkripnya ada di PDF dengan nama yang sama." },
               },
               {
