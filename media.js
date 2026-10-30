@@ -143,20 +143,52 @@
       if (entry.kind === "file") {
         const kind = kindOf(name);
         if (kind) out.push({ name, rel: prefix + name, kind, handle: entry });
-        else if (/\.(vtt|srt)$/i.test(name)) subs.push({ rel: prefix + name, handle: entry });
+        else if (/\.(vtt|srt)$/i.test(name)) subs.push({ rel: prefix + name, src: entry });
       } else if (depth > 0 && !/^(__MACOSX|\.)/.test(name)) {
         await walk(entry, `${prefix}${name}/`, depth - 1, out, subs);
       }
     }
   }
 
-  // Subtitle pasangan video: nama dasarnya sama, misalnya "002 Words.mp4" dan "002 Words-subtitle-en.srt".
+  // ---------- Subtitle ----------
+  const SUB_LABEL = { en: "English", id: "Indonesia" };
+  const stem = (rel) => rel.replace(/\.[^./]+$/, "");
+  const fileName = (rel) => rel.split("/").pop();
+
+  // Bahasa dari nama file: "(Indonesian)", "-id", "(English)", "-subtitle-en". Tanpa penanda dianggap bahasa Inggris.
+  function langOf(name) {
+    const n = stem(name).toLowerCase();
+    if (/indonesian|indonesia|bahasa|(^|[\s\-_.(])(id|ind|indo)(\)|$|[\s\-_.])/.test(n)) return { lang: "id", tagged: true };
+    if (/english|(^|[\s\-_.(])(en|eng)(\)|$|[\s\-_.])/.test(n)) return { lang: "en", tagged: true };
+    return { lang: "en", tagged: false };
+  }
+
+  // Kunci pencocokan untuk subtitle di folder terpisah: teks sampai angka pertama, misalnya "session 1".
+  const numberKey = (name) => {
+    const m = stem(name).toLowerCase().match(/^\D*\d+/);
+    return m ? m[0].trim() : null;
+  };
+
+  // Pasangan subtitle tiap video, satu per bahasa:
+  // 1. nama dasar sama di folder yang sama ("002 Words.mp4" dan "002 Words-subtitle-en.srt");
+  // 2. kalau tidak ada, subtitle berpenanda bahasa di folder lain dengan nomor sama
+  //    ("Session 1. R and W.mp4" dan "Pronunciation Workshop Subtitles/Session 1 (Indonesian).srt").
   function attachSubtitles(files, subs) {
     files.forEach((f) => {
       if (f.kind !== "video") return;
-      const base = f.rel.replace(/\.[^./]+$/, "").toLowerCase();
-      const sub = subs.find((s) => s.rel.toLowerCase().startsWith(base));
-      if (sub) f.subtitle = sub.handle;
+      const base = stem(f.rel).toLowerCase();
+      let found = subs.filter((s) => s.rel.toLowerCase().startsWith(base));
+      if (!found.length) {
+        const key = numberKey(fileName(f.rel));
+        if (key) found = subs.filter((s) => langOf(fileName(s.rel)).tagged && numberKey(fileName(s.rel)) === key);
+      }
+      const byLang = {};
+      found.forEach((s) => {
+        const { lang } = langOf(fileName(s.rel));
+        if (!byLang[lang]) byLang[lang] = { lang, label: SUB_LABEL[lang], src: s.src };
+      });
+      const list = ["en", "id"].filter((l) => byLang[l]).map((l) => byLang[l]);
+      if (list.length) f.subtitles = list;
     });
   }
 
@@ -211,6 +243,7 @@
     if (serverMode) {
       const res = await (await fetch(`/api/course/list?path=${encodeURIComponent(session.path)}`, { cache: "no-store" })).json();
       if (res.status !== "granted") return res;
+      attachSubtitles(res.files, (res.subs || []).map((s) => ({ rel: s.rel, src: s.url })));
       return finish(res.files, session.pick);
     }
     const { dir, missing } = await resolveDir(session.path);

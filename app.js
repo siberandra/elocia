@@ -917,7 +917,7 @@
           <button type="button" class="mat ${isWatched(s.id, f.rel) ? "seen" : ""}" data-open="${i}">
             <span class="mat-icon mat-${f.kind}">${isWatched(s.id, f.rel) ? sized(ICON.check, 16) : sized(MAT_ICON[f.kind], 16)}</span>
             <span class="mat-name"><b>${esc(prettyName(f.name))}</b>${dir ? `<small>${esc(dir)}</small>` : ""}</span>
-            ${f.subtitle ? '<span class="mat-cc" title="Ada subtitle">CC</span>' : ""}
+            ${f.subtitles ? `<span class="mat-cc" title="Subtitle: ${f.subtitles.map((x) => x.label).join(", ")}">${f.subtitles.map((x) => x.lang.toUpperCase()).join(" · ")}</span>` : ""}
           </button>`;
           })
           .join("")}
@@ -962,6 +962,7 @@
     $("viewerNext").disabled = index === materials.files.length - 1;
     const body = $("viewerBody");
     body.innerHTML = '<p class="viewer-msg">Membuka…</p>';
+    $("subSwitch").innerHTML = "";
     updateViewerMark();
     if (!viewer.open) viewer.showModal();
     // Mode laptop: file disajikan serve.js lewat URL. Mode pilih folder: dibaca dari handle jadi blob.
@@ -990,15 +991,18 @@
       ? `<video id="viewerMedia" class="viewer-video" controls autoplay playsinline preload="metadata" src="${url}"></video>`
       : `<div class="viewer-audio"><span class="viewer-audio-icon">${sized(ICON.mic, 40)}</span><audio id="viewerMedia" controls autoplay src="${url}"></audio></div>`;
     const media = $("viewerMedia");
-    if (f.subtitle && tag === "video") {
-      try {
-        const subUrl = await window.EloMedia.subtitleUrl(f.subtitle);
-        viewerUrls.push(subUrl);
-        const track = document.createElement("track");
-        Object.assign(track, { kind: "subtitles", srclang: "en", label: "English", src: subUrl });
-        media.append(track);
-      } catch (e) {}
+    if (tag === "video") {
+      for (const sub of f.subtitles || []) {
+        try {
+          const subUrl = await window.EloMedia.subtitleUrl(sub.src);
+          if (subUrl.startsWith("blob:")) viewerUrls.push(subUrl);
+          const track = document.createElement("track");
+          Object.assign(track, { kind: "subtitles", srclang: sub.lang, label: sub.label, src: subUrl });
+          media.append(track);
+        } catch (e) {}
+      }
     }
+    renderSubSwitch(f, media);
     media.addEventListener("timeupdate", () => {
       if (media.duration && media.currentTime / media.duration >= 0.9) markWatched(s, f.rel);
     });
@@ -1006,6 +1010,57 @@
     media.addEventListener("error", () => {
       body.innerHTML = '<p class="viewer-msg">Format file ini tidak bisa diputar di browser. Buka lewat File Explorer.</p>';
     });
+  }
+
+  // ---------- Pilihan subtitle: Mati / English / Indonesia ----------
+  const SUB_PREF = "elocia:subtitle";
+  const subPref = () => {
+    try {
+      return localStorage.getItem(SUB_PREF) || "off";
+    } catch (e) {
+      return "off";
+    }
+  };
+  const applySub = (media, lang) => Array.from(media.textTracks).forEach((t) => (t.mode = t.language === lang ? "showing" : "disabled"));
+
+  function renderSubSwitch(f, media) {
+    const box = $("subSwitch");
+    const subs = f.subtitles || [];
+    if (f.kind !== "video") {
+      box.innerHTML = "";
+      return;
+    }
+    if (!subs.length) {
+      const pdf = materials.files.some((x) => x.kind === "pdf");
+      box.innerHTML = `<span class="sub-none">Video ini tidak punya subtitle.${pdf ? " Transkrip atau catatannya ada di PDF pada daftar materi." : ""}</span>`;
+      return;
+    }
+    let lang = subPref();
+    if (lang !== "off" && !subs.some((s) => s.lang === lang)) lang = "off";
+    const opts = [{ lang: "off", label: "Mati" }].concat(subs);
+    box.innerHTML =
+      `<span class="sub-label" title="Metode 4 langkah: tonton tanpa subtitle dulu, lalu nyalakan">Subtitle</span>` +
+      opts.map((o) => `<button type="button" class="sub-opt" data-sub="${o.lang}" aria-pressed="false">${esc(o.label)}</button>`).join("");
+    const set = (l) => {
+      lang = l;
+      applySub(media, l);
+      box.querySelectorAll(".sub-opt").forEach((b) => {
+        const on = b.dataset.sub === l;
+        b.classList.toggle("on", on);
+        b.setAttribute("aria-pressed", String(on));
+      });
+    };
+    box.querySelectorAll(".sub-opt").forEach((b) =>
+      b.addEventListener("click", () => {
+        try {
+          localStorage.setItem(SUB_PREF, b.dataset.sub);
+        } catch (e) {}
+        set(b.dataset.sub);
+      })
+    );
+    set(lang);
+    // Track baru siap setelah metadata video dimuat; terapkan ulang pilihan saat itu.
+    media.addEventListener("loadedmetadata", () => applySub(media, lang));
   }
 
   function updateViewerMark() {

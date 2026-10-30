@@ -108,13 +108,8 @@ function listSession(sessionPath) {
   const files = [];
   const subs = [];
   walk(dir, "", 2, files, subs);
-  files.forEach((f) => {
-    if (f.kind !== "video") return;
-    const base = f.rel.replace(/\.[^./]+$/, "").toLowerCase();
-    const sub = subs.find((s) => s.rel.toLowerCase().startsWith(base));
-    if (sub) f.subtitle = sub.url;
-  });
-  return { status: "granted", files };
+  // Pencocokan subtitle dengan video dilakukan di media.js, supaya sama dengan mode pilih folder.
+  return { status: "granted", files, subs };
 }
 
 function sendJSON(res, code, data) {

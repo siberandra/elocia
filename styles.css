@@ -658,7 +658,12 @@ button.rm-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); b
 .viewer-msg { max-width: 60ch; padding: 24px; color: rgba(255, 255, 255, .85); text-align: center; display: grid; gap: 10px; }
 .viewer-msg code { font-family: var(--mono); font-size: var(--fs-sm); color: var(--mark); overflow-wrap: anywhere; }
 .viewer-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 14px 10px 18px; background: #16201b; }
-.viewer-tip { font-size: var(--fs-xs); color: rgba(255, 255, 255, .65); }
+.sub-switch { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-height: 34px; }
+.sub-label { font-family: var(--mono); font-size: var(--fs-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--mark); margin-right: 4px; cursor: help; }
+.sub-opt { height: 32px; padding: 0 12px; border-radius: 99px; border: 1px solid rgba(255, 255, 255, .22); background: transparent; color: rgba(255, 255, 255, .85); font: inherit; font-size: var(--fs-sm); font-weight: 700; cursor: pointer; }
+.sub-opt:hover { border-color: rgba(255, 255, 255, .5); }
+.sub-opt.on { background: var(--mark); border-color: var(--mark); color: var(--ink); }
+.sub-none { font-size: var(--fs-xs); color: rgba(255, 255, 255, .65); }
 .viewer-foot .btn { min-height: 40px; background: rgba(255, 255, 255, .08); color: #fff; border-color: rgba(255, 255, 255, .2); box-shadow: none; }
 .viewer-foot .btn.on { background: var(--done); border-color: var(--done); }
 
