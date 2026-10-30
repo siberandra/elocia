@@ -32,6 +32,7 @@ from pathlib import Path
 APP_DIR = Path(__file__).resolve().parents[2]
 STATUS_FILE = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "Elocia" / "subs-status.json"
 LOG_FILE = STATUS_FILE.with_name("subs.log")
+TASK_NAME = "Elocia Subtitle"  # tugas Task Scheduler dari pasang-otomatis.ps1; ikut dihapus saat semua selesai
 VIDEO_EXT = {".mp4", ".m4v", ".mov", ".mkv", ".webm"}
 SUB_EXT = {".srt", ".vtt"}
 API = "https://generativelanguage.googleapis.com/v1beta"
@@ -44,12 +45,14 @@ MAX_DUR = 6.5
 MIN_DUR = 1.0
 GAP_BREAK = 0.8
 
-sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
+if sys.stdout:  # pythonw.exe (dijalankan Task Scheduler tanpa jendela) tidak punya stdout
+    sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
 
 
 def log(msg):
     line = f"{time.strftime('%H:%M:%S')} {msg}"
-    print(line, flush=True)
+    if sys.stdout:
+        print(line, flush=True)
     try:
         with open(LOG_FILE, "a", encoding="utf-8") as f:
             f.write(line + "\n")
@@ -294,9 +297,17 @@ def load_audio(path, rate=16000):
     with av.open(str(path)) as container:
         stream = next(s for s in container.streams if s.type == "audio")
         resampler = av.AudioResampler(format="s16", layout="mono", rate=rate)
-        for frame in container.decode(stream):
-            for out in resampler.resample(frame):
-                chunks.append(out.to_ndarray().reshape(-1))
+        for packet in container.demux(stream):
+            try:
+                frames = packet.decode()
+            except av.error.InvalidDataError:
+                # Bagian file yang rusak diganti hening sepanjang paketnya, supaya waktu subtitle tidak bergeser.
+                if packet.duration and packet.time_base:
+                    chunks.append(np.zeros(int(packet.duration * packet.time_base * rate), dtype=np.int16))
+                continue
+            for frame in frames:
+                for out in resampler.resample(frame):
+                    chunks.append(out.to_ndarray().reshape(-1))
         for out in resampler.resample(None):
             chunks.append(out.to_ndarray().reshape(-1))
     if not chunks:
@@ -464,6 +475,17 @@ def below_normal_priority():
             pass
 
 
+def already_running():
+    """Satu proses saja: Task Scheduler memicu tiap jam, dan launcher manual bisa dijalankan kapan pun.
+    Mutex dilepas Windows otomatis saat proses ini selesai."""
+    if os.name != "nt":
+        return False
+    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    k32.CreateMutexW.restype = ctypes.c_void_p
+    k32.CreateMutexW(None, False, "Local\\ElociaSubtitle")
+    return ctypes.get_last_error() == 183  # ERROR_ALREADY_EXISTS
+
+
 def save_status(**kw):
     try:
         STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -483,6 +505,10 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--cleanup-when-done", action="store_true", help="hapus lingkungan Whisper dan modelnya kalau semua subtitle sudah lengkap")
     args = ap.parse_args()
+    if not args.dry_run and already_running():
+        if sys.stdout:
+            print("Pembuatan subtitle sudah berjalan di latar belakang.")
+        return
 
     course = Path(args.course)
     queue = build_queue(course, {int(b) for b in args.batches.split(",")})
@@ -583,7 +609,7 @@ def cleanup(model_name):
     targets = [t for t in targets if t.exists()]
     if not targets or os.name != "nt":
         return
-    rm = " & ".join(f'rmdir /s /q "{t}"' for t in targets)
+    rm = " & ".join(f'rmdir /s /q "{t}"' for t in targets) + f' & schtasks /delete /tn "{TASK_NAME}" /f'
     subprocess.Popen(f"cmd /c timeout /t 15 /nobreak >nul & {rm}", creationflags=0x00000008 | 0x00000200, close_fds=True)
     log("Semua subtitle lengkap. Alat Whisper dan modelnya akan dihapus dalam 15 detik: " + ", ".join(str(t) for t in targets))
 

@@ -34,3 +34,7 @@ Video kursus yang belum punya subtitle diberi subtitle English (Whisper, offline
 (terjemahan Gemini, hanya teks yang dikirim) lewat `tools/subtitles/make_subs.py`. Hasilnya disimpan di sebelah
 video sebagai `<nama video> (English).srt` dan `<nama video> (Indonesian).srt`, dan Elocia memakainya otomatis.
 Skripnya bisa dijalankan ulang kapan saja; yang sudah ada dilewati. Lihat `--help` untuk pilihannya.
+
+`tools/subtitles/Pasang otomatis.cmd` memasang tugas Task Scheduler "Elocia Subtitle" yang menjalankan skrip ini
+tanpa jendela saat masuk Windows dan tiap jam, hanya saat charger tercolok. Tugas itu, lingkungan Whisper, dan
+modelnya terhapus sendiri setelah semua subtitle lengkap. Progres: `%LOCALAPPDATA%\Elocia\subs.log`.
