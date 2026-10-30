@@ -18,6 +18,7 @@ Kunci Gemini dibaca dari elocia.local.json (tidak ikut Git) atau variabel GEMINI
 
 import argparse
 import ctypes
+import datetime
 import json
 import os
 import re
@@ -167,7 +168,7 @@ def build_queue(course, batches):
                 continue
             seen.add(p)
             have = subs_for(rel, subs)
-            queue.append({"video": p, "batch": s["batch"], "week": s["week"], "have": have})
+            queue.append({"video": p, "batch": s["batch"], "week": s["week"], "sat": s["sat"], "have": have})
     return queue
 
 
@@ -475,6 +476,14 @@ def below_normal_priority():
             pass
 
 
+def study_weekend():
+    """Tanggal Sabtu akhir pekan ini (format plan.js) kalau hari ini Sabtu atau Minggu, selain itu None."""
+    today = datetime.date.today()
+    if today.weekday() < 5:
+        return None
+    return (today - datetime.timedelta(days=today.weekday() - 5)).isoformat()
+
+
 def already_running():
     """Satu proses saja: Task Scheduler memicu tiap jam, dan launcher manual bisa dijalankan kapan pun.
     Mutex dilepas Windows otomatis saat proses ini selesai."""
@@ -504,6 +513,7 @@ def main():
     ap.add_argument("--limit", type=int, default=0, help="berhenti setelah N video (untuk uji)")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--cleanup-when-done", action="store_true", help="hapus lingkungan Whisper dan modelnya kalau semua subtitle sudah lengkap")
+    ap.add_argument("--weekend-plan-only", action="store_true", help="Sabtu dan Minggu hanya memproses video minggu belajar saat itu; hari kerja semuanya")
     args = ap.parse_args()
     if not args.dry_run and already_running():
         if sys.stdout:
@@ -517,6 +527,10 @@ def main():
     todo = [q for q in queue if q in need_en or q in need_id]
     if args.limit:
         todo = todo[: args.limit]
+    off_plan = lambda q: args.weekend_plan_only and study_weekend() not in (None, q["sat"])
+    todo = [q for q in todo if not off_plan(q)]
+    if not todo and args.weekend_plan_only and study_weekend():
+        return  # akhir pekan dan materi minggu ini sudah lengkap: laptop dibiarkan ringan
 
     total_min = sum(duration(q["video"]) for q in need_en if q in todo) / 60
     log(f"Antrean: {len(todo)} video | butuh English: {sum(q in todo for q in need_en)} (±{total_min:.0f} menit audio) | butuh Indonesia: {sum(q in todo for q in need_id)}")
@@ -538,8 +552,9 @@ def main():
     stop_translation = {"reason": None}
     counts = {"en": 0, "id": 0}
 
-    def translate_job(idx, v, name, en_path):
-        if stop_translation["reason"]:
+    def translate_job(idx, q, name, en_path):
+        v = q["video"]
+        if stop_translation["reason"] or off_plan(q):
             return
         try:
             cues = read_subs(Path(en_path))
@@ -559,6 +574,8 @@ def main():
     for idx, q in enumerate(todo, 1):
         v = q["video"]
         name = v.relative_to(course)
+        if off_plan(q):  # akhir pekan tiba di tengah jalan: sisanya dilanjutkan hari Senin
+            continue
         save_status(state="berjalan", english=counts["en"], indonesia=counts["id"], total=len(todo), current=str(name))
         try:
             en_path = q["have"].get("en")
@@ -573,7 +590,7 @@ def main():
                 counts["en"] += 1
                 log(f"[{idx}/{len(todo)}] EN {len(cues)} baris, {time.time() - t0:.0f} dtk: {name}")
             if q in need_id and tr and en_path:
-                pool.submit(translate_job, idx, v, name, en_path)
+                pool.submit(translate_job, idx, q, name, en_path)
         except Exception as e:
             log(f"[{idx}/{len(todo)}] Gagal, dilewati: {name} ({type(e).__name__}: {e})")
     log("Transkripsi selesai, menunggu terjemahan yang tersisa...")

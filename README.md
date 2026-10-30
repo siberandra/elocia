@@ -36,5 +36,6 @@ video sebagai `<nama video> (English).srt` dan `<nama video> (Indonesian).srt`, 
 Skripnya bisa dijalankan ulang kapan saja; yang sudah ada dilewati. Lihat `--help` untuk pilihannya.
 
 `tools/subtitles/Pasang otomatis.cmd` memasang tugas Task Scheduler "Elocia Subtitle" yang menjalankan skrip ini
-tanpa jendela saat masuk Windows dan tiap jam, hanya saat charger tercolok. Tugas itu, lingkungan Whisper, dan
+tanpa jendela saat masuk Windows dan tiap jam, dengan atau tanpa charger. Senin–Jumat semua video diproses; Sabtu–Minggu hanya video minggu
+belajar saat itu (menurut kalender rencana). Tugas itu, lingkungan Whisper, dan
 modelnya terhapus sendiri setelah semua subtitle lengkap. Progres: `%LOCALAPPDATA%\Elocia\subs.log`.
