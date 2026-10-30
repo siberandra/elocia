@@ -130,7 +130,7 @@
                 sun: { kind: "reading", what: "Book Summary: The 7 Habits", path: P.book, min: 40, note: "Baca PDF sambil mendengarkan MP3-nya. Tidak harus selesai sekali duduk." },
               },
               {
-                sat: { kind: "test", what: "Uji akhir Batch 1: Exit Test Market Leader (Listening, Language, Reading)", pick: { names: ["exit_test"] }, path: P.ml + " › Test Master", min: 60, note: "Buka exit_test.doc untuk soal, lalu putar exit_test_part_a.mp3 dan part_b.mp3 untuk Listening. Kerjakan soal 1–60 dengan timer di Mode Ujian. Kunci jawabannya tidak tersedia, jadi minta Elocia AI memeriksa jawaban Anda. Skor 60% ke atas berarti Batch 1 sudah dikuasai.", exam: ML_EXIT(["L", "G", "R"]) },
+                sat: { kind: "test", what: "Uji akhir Batch 1: Exit Test Market Leader (Listening, Language, Reading)", pick: { names: ["exit_test", "audio_scripts"] }, path: P.ml + " › Test Master", min: 60, note: "Buka exit_test.doc untuk soal, lalu putar exit_test_part_a.mp3 dan part_b.mp3 untuk Listening. Kerjakan soal 1–60 dengan timer di Mode Ujian. Kunci jawabannya tidak tersedia, jadi minta Elocia AI memeriksa jawaban Anda. Skor 60% ke atas berarti Batch 1 sudah dikuasai.", exam: ML_EXIT(["L", "G", "R"]) },
                 sun: { kind: "test", what: "Uji akhir: Daily Conversations tanpa transkrip", path: P.dc, min: 30, note: "Kalau sekitar 90% sudah paham, telinga Anda siap untuk Batch 2. Opsional: kerjakan juga Writing dan Speaking dari Exit Test sebagai titik awal, lalu catat nilainya di Mode Ujian. Hasilnya dibandingkan lagi di akhir Batch 2.", exam: ML_EXIT(["W", "S"]) },
               },
             ],
@@ -205,7 +205,7 @@
                 sun: { kind: "speaking", what: "Percakapan 1-on-1 pertama, 20 menit", path: P.dc, min: 30, note: "Dengan tutor online atau teman yang bisa berbahasa Inggris. Siapkan 3 topik: diri sendiri, pekerjaan, hobi. Gugup itu wajar." },
               },
               {
-                sat: { kind: "test", what: "Uji Batch 2: Writing + Speaking Exit Test, lalu bandingkan", pick: { names: ["exit_test"] }, path: P.ml + " › Test Master", min: 45, note: "Kerjakan lagi Writing dan Speaking dari Exit Test Market Leader, minta Elocia AI menilai (0–10), lalu bandingkan dengan nilai titik awal di akhir Batch 1. Dengarkan juga rekaman Anda di minggu ke-3: bedanya akan terasa.", exam: { test: "b2Output", type: "ml", label: "Uji Batch 2: Writing + Speaking", parts: ["W", "S"] } },
+                sat: { kind: "test", what: "Uji Batch 2: Writing + Speaking Exit Test, lalu bandingkan", pick: { names: ["exit_test", "audio_scripts"] }, path: P.ml + " › Test Master", min: 45, note: "Kerjakan lagi Writing dan Speaking dari Exit Test Market Leader, minta Elocia AI menilai (0–10), lalu bandingkan dengan nilai titik awal di akhir Batch 1. Dengarkan juga rekaman Anda di minggu ke-3: bedanya akan terasa.", exam: { test: "b2Output", type: "ml", label: "Uji Batch 2: Writing + Speaking", parts: ["W", "S"] } },
                 sun: { kind: "speaking", what: "Percakapan 1-on-1 kedua, 20 menit", path: P.dc, min: 30, note: "Coba topik baru: film atau buku terakhir yang Anda nikmati." },
               },
             ],
