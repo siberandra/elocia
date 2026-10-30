@@ -27,3 +27,10 @@ Progres disimpan di `localStorage` browser masing-masing perangkat. Gunakan **Pe
 ## Deploy
 
 Situs statis tanpa build, di-hosting lewat GitHub Pages dari branch `main` (root). Setiap push ke `main` otomatis memperbarui situs dalam 1–2 menit.
+
+## Subtitle buatan
+
+Video kursus yang belum punya subtitle diberi subtitle English (Whisper, offline di laptop) dan Indonesia
+(terjemahan Gemini, hanya teks yang dikirim) lewat `tools/subtitles/make_subs.py`. Hasilnya disimpan di sebelah
+video sebagai `<nama video> (English).srt` dan `<nama video> (Indonesian).srt`, dan Elocia memakainya otomatis.
+Skripnya bisa dijalankan ulang kapan saja; yang sudah ada dilewati. Lihat `--help` untuk pilihannya.
