@@ -3,3 +3,5 @@
 .DS_Store
 Thumbs.db
 elocia.local.json
+__pycache__/
+*.pyc
