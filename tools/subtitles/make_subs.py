@@ -31,6 +31,7 @@ from pathlib import Path
 
 APP_DIR = Path(__file__).resolve().parents[2]
 STATUS_FILE = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "Elocia" / "subs-status.json"
+LOG_FILE = STATUS_FILE.with_name("subs.log")
 VIDEO_EXT = {".mp4", ".m4v", ".mov", ".mkv", ".webm"}
 SUB_EXT = {".srt", ".vtt"}
 API = "https://generativelanguage.googleapis.com/v1beta"
@@ -47,7 +48,13 @@ sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
 
 
 def log(msg):
-    print(time.strftime("%H:%M:%S"), msg, flush=True)
+    line = f"{time.strftime('%H:%M:%S')} {msg}"
+    print(line, flush=True)
+    try:
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(line + "\n")
+    except OSError:
+        pass
 
 
 # ---------- Mencari video sesuai rencana (sama dengan media.js) ----------
