@@ -351,11 +351,18 @@ def gemini_models(key):
 
 
 class Translator:
+    # Kuota gratis Gemini dihitung per model per hari (sekitar 20 permintaan). Model teratas disisihkan
+    # untuk Elocia AI supaya chat tetap bisa dipakai; model yang kuotanya habis dicoba lagi sejam kemudian.
+    RETRY_EXHAUSTED = 3600
+
     def __init__(self, key):
         self.key = key
-        self.models = gemini_models(key)
+        models = gemini_models(key)
+        self.models = models[1:] or models
         self.preferred = None
         self.last_call = 0
+        self.exhausted = {}
+        self.dead = set()
 
     def _call(self, model, lines, context):
         wait = 4.5 - (time.time() - self.last_call)
@@ -365,7 +372,7 @@ class Translator:
         body = {
             "systemInstruction": {"parts": [{"text": TRANSLATE_RULES}]},
             "contents": [{"role": "user", "parts": [{"text": json.dumps({"context_before": context, "lines": lines}, ensure_ascii=False)}]}],
-            "generationConfig": {"temperature": 0.3, "responseMimeType": "application/json", "maxOutputTokens": 8192},
+            "generationConfig": {"temperature": 0.3, "responseMimeType": "application/json", "maxOutputTokens": 16384},
         }
         j = http_json(f"{API}/models/{model}:generateContent?key={self.key}", body)
         parts = j["candidates"][0]["content"]["parts"]
@@ -374,36 +381,66 @@ class Translator:
             raise ValueError(f"jumlah baris tidak cocok ({len(out) if isinstance(out, list) else '?'} vs {len(lines)})")
         return [re.sub(r"\s+", " ", str(x)).strip() for x in out]
 
-    def translate(self, lines, context):
+    def usable(self):
+        now = time.time()
         order = ([self.preferred] if self.preferred else []) + [m for m in self.models if m != self.preferred]
-        last = None
-        for model in order[:5]:
-            for attempt in range(3):
-                try:
-                    out = self._call(model, lines, context)
-                    self.preferred = model
-                    return out
-                except urllib.error.HTTPError as e:
-                    last = e
-                    if e.code == 429:
-                        time.sleep(30 * (attempt + 1))
-                        continue
-                    if e.code in (400, 401, 403):
-                        raise RuntimeError(f"Kunci Gemini ditolak ({e.code}).") from e
-                    break  # 404/500/503: coba model berikutnya
-                except (ValueError, KeyError, json.JSONDecodeError, TimeoutError, urllib.error.URLError) as e:
-                    last = e
-                    time.sleep(3)
-        raise RuntimeError(f"Terjemahan gagal: {last}")
+        return [m for m in order if m not in self.dead and now - self.exhausted.get(m, 0) > self.RETRY_EXHAUSTED]
+
+    def translate(self, lines, context):
+        """Menerjemahkan; kalau semua model habis kuotanya, menunggu sampai ada yang pulih (tidak pernah menyerah
+        karena kuota). ValueError berarti jawaban tidak cocok jumlah barisnya: pemanggil memecah potongannya."""
+        bad_answers = 0
+        while True:
+            models = self.usable()
+            if not models:
+                log("Kuota harian Gemini habis untuk semua model; terjemahan menunggu 30 menit lalu dicoba lagi.")
+                time.sleep(1800)
+                continue
+            model = models[0]
+            try:
+                out = self._call(model, lines, context)
+                self.preferred = model
+                return out
+            except urllib.error.HTTPError as e:
+                detail = e.read().decode("utf-8", "replace")
+                if e.code == 429 and "PerDay" in detail:
+                    self.exhausted[model] = time.time()
+                    if self.preferred == model:
+                        self.preferred = None
+                elif e.code == 429:
+                    delay = re.search(r'"retryDelay":\s*"(\d+)', detail)
+                    time.sleep(int(delay.group(1)) + 2 if delay else 60)
+                elif e.code == 404:
+                    self.dead.add(model)
+                elif e.code in (400, 401, 403):
+                    raise RuntimeError(f"Kunci Gemini ditolak ({e.code}).") from e
+                else:  # 500/503: model sedang sibuk, istirahatkan 5 menit
+                    self.exhausted[model] = time.time() - self.RETRY_EXHAUSTED + 300
+            except (ValueError, KeyError, IndexError, json.JSONDecodeError) as e:
+                bad_answers += 1
+                if bad_answers >= 2:
+                    raise ValueError(str(e)) from e
+            except (TimeoutError, urllib.error.URLError, ConnectionError):
+                time.sleep(15)
 
 
-def translate_cues(tr, cues, chunk=30):
+def translate_cues(tr, cues, chunk=120):
+    """Satu permintaan per video kalau muat (hemat kuota); potongan yang jawabannya tidak cocok dipecah dua."""
+
+    def run(start, part):
+        context = [c[2] for c in cues[max(0, start - 4) : start]]
+        try:
+            texts = tr.translate([c[2] for c in part], context)
+        except ValueError:
+            if len(part) <= 6:
+                raise
+            half = len(part) // 2
+            return run(start, part[:half]) + run(start + half, part[half:])
+        return [[c[0], c[1], t] for c, t in zip(part, texts)]
+
     out = []
     for i in range(0, len(cues), chunk):
-        part = cues[i : i + chunk]
-        context = [c[2] for c in cues[max(0, i - 4) : i]]
-        texts = tr.translate([c[2] for c in part], context)
-        out += [[c[0], c[1], t] for c, t in zip(part, texts)]
+        out += run(i, cues[i : i + chunk])
     return out
 
 
